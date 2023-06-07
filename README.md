@@ -35,14 +35,14 @@ package main
 import (
 	"fmt"
 	"log"
-    "github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+    	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 )
 
 func main() {
     apiKey := "YOUR_DEFAULT_API_KEY"
     model := openai.GPT4_8k // Or the model you want to use
 
-    messages := []ChatCompletionMessage{
+    messages := []openai.ChatCompletionMessage{
         {
             Role:    "system",
             Content: "You are a helpful assistant.",
@@ -53,14 +53,14 @@ func main() {
         },
     }
 
-    req := &ChatCompletionRequest{
+    req := &openai.ChatCompletionRequest{
         APIKEY:   apiKey,
         Model:    model,
         Messages: messages,
         MaxTokens: 60,
     }
 
-    resp, err := CreateChatCompletion(req)
+    resp, err := openai.CreateChatCompletion(req)
     if err != nil {
         log.Fatalf("Failed to create chat completion: %v", err)
     }
@@ -90,7 +90,7 @@ package main
 import (
 	"fmt"
 	"log"
-    "github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+    	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 )
 
 func main() {
