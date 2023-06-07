@@ -104,6 +104,10 @@ func init() {
 }
 
 func request(method, path string, body, response any, apikey string) error {
+	if apikey == "" && defaultAPIKey == "" {
+		return fmt.Errorf("we do not have an openai api key defined as default or provided for this request")
+	}
+
 	err := requestnowait(method, path, body, response, apikey)
 	if err != nil {
 		// Openai also has 500 errors sometimes for now
@@ -122,7 +126,7 @@ func request(method, path string, body, response any, apikey string) error {
 			NewDelay:  initialDelay * backoffFactor,
 		}
 
-		fmt.Println("* Error: %s, retrying in %v...\n", err, initialDelay)
+		fmt.Printf("* Error: %s, retrying in %v...\n", err, initialDelay)
 
 		requestswaitingMu.Lock()
 		requestswaiting = append(requestswaiting, r)
