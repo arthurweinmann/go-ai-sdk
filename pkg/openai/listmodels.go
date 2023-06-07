@@ -4,7 +4,7 @@ const urlSuffix_listmodels = "v1/models"
 
 type ListModelsRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 }
 
 type ListModelsObject struct {

@@ -9,7 +9,7 @@ const urlSuffix_edits = "v1/edits"
 // EditsRequest represents a request structure for Edits API.
 type EditsRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 
 	Model       Model   `json:"model,omitempty"`
 	Input       string  `json:"input,omitempty"`

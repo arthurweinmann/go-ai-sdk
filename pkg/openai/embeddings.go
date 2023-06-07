@@ -8,7 +8,7 @@ const urlSuffix_embeddings = "v1/embeddings"
 
 type EmbeddingRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 
 	Model Model `json:"model"`
 

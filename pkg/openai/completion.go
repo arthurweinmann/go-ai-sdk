@@ -9,7 +9,7 @@ const urlSuffix_completion = "v1/completions"
 // CompletionRequest represents a request structure for completion API.
 type CompletionRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 
 	Model Model `json:"model"`
 

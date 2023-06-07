@@ -20,7 +20,7 @@ type ChatCompletionMessage struct {
 // ChatCompletionRequest represents a request structure for chat completion API.
 type ChatCompletionRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 
 	Model            Model                   `json:"model"`
 	Messages         []ChatCompletionMessage `json:"messages"`

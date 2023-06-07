@@ -8,7 +8,7 @@ var urlSuffix_moderate = "v1/moderations"
 
 type ModerateRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"apikey"`
+	APIKEY string `json:"-"`
 
 	Input string `json:"input"`
 }
