@@ -1,5 +1,7 @@
 # Golang AI SDKs
 
+<img src="https://github.com/arthurweinmann/go-ai-sdk/blob/main/doc/logo.png" width="250"/>
+
 A comprehensive collection of Golang SDKs for various AI APIs. Use each independently, or leverage the universal interface to seamlessly interact with multiple APIs in a uniform way. Enables easy swapping between AI services without changing your core codebase.
 
 # Current Status
