@@ -61,9 +61,15 @@ type FunctionParameters struct {
 }
 
 type FunctionProperty struct {
-	Type        string   `json:"type"` // string, number, boolean, object, null, anyof
+	Type        string   `json:"type"` // string, number, array, boolean, object, null, anyof
 	Description string   `json:"description,omitempty"`
 	Enum        []string `json:"enum,omitempty"`
+
+	// Only if Type == "array"
+	Items *FunctionProperty `json:"items,omitempty"`
+
+	// Only if Type == "object"
+	Required []string `json:"required,omitempty"`
 }
 
 // ChatCompletionRequest represents a request structure for chat completion API.
