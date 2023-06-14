@@ -4,16 +4,24 @@ import "fmt"
 
 // order in array: prompt, completion
 var PricingPer1000TokensPerModel = map[Model][]float64{
-	GPT4_8k:         {0.03, 0.06},
-	GPT4_32k:        {0.06, 0.12},
-	GPT3_5_turbo_4k: {0.002, 0.002},
-	//
+	GPT4_8k:       {0.03, 0.06},
+	GPT4_8k_0613:  {0.03, 0.06},
+	GPT4_32k:      {0.06, 0.12},
+	GPT4_32k_0613: {0.06, 0.12},
+
+	GPT3_5_turbo_4k:      {0.0015, 0.0020},
+	GPT3_5_turbo_4k_0301: {0.0015, 0.0020},
+	GPT3_5_turbo_4k_0613: {0.0015, 0.0020},
+
+	GPT3_5_turbo_16k:      {0.0030, 0.0040},
+	GPT3_5_turbo_16k_0613: {0.0030, 0.0040},
+
 	TextDavinci3_4k:    {0.02, 0.02},
 	TextDavinci2_4k:    {0.02, 0.02},
 	TextDavinci_1_Edit: {0.02, 0.02},
 	CodeDavinci2_8k:    {0.02, 0.02},
-	//
-	Text_Embedding_Ada_2_8k: {0.0004, 0.0004},
+
+	Text_Embedding_Ada_2_8k: {0.0001, 0.0001},
 }
 
 // Usage Represents the total token usage per request to OpenAI.

@@ -7,6 +7,8 @@ import (
 )
 
 // GetMaxRemainingTokens uses openai tiktoken to compute the number of tokens and thus you need to have python3 installed
+// Watchout for functions definitions which count toward the model context length. I did not find information as to the function syntax
+// used by openai to compute its number of tokens. You can probably approximate it.
 func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
 	var encoding string
 	switch m {
@@ -21,6 +23,7 @@ func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
 		return 0, err
 	}
 
+	// TODO: Consider the following: `every reply is primed with <|start|>assistant<|message|>`
 	tokencount += 50
 
 	switch m {

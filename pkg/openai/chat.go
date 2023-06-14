@@ -6,15 +6,64 @@ import (
 
 const urlSuffix_chatcompletion = "v1/chat/completions"
 
+type MessageRole string
+
+const (
+	System    MessageRole = "system"
+	User      MessageRole = "user"
+	Assistant MessageRole = "assistant"
+	Function  MessageRole = "function"
+)
+
 type ChatCompletionMessage struct {
-	Role    string `json:"role"`
+	Role MessageRole `json:"role"`
+
+	// The contents of the message. content is required for all messages except assistant messages with function calls.
 	Content string `json:"content"`
 
-	// This property isn't in the official documentation, but it's in
-	// the documentation for the official library for python:
-	// - https://github.com/openai/openai-python/blob/main/chatml.md
-	// - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+	// The name of the author of this message. name is required if role is function,
+	// and it should be the name of the function whose response is in the content.
+	// May contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
 	Name string `json:"name,omitempty"`
+
+	// Controls how the model responds to function calls.
+	// "none" means the model does not call a function, and responds to the end-user.
+	// "auto" means the model can pick between an end-user or calling a function.
+	// Specifying a particular function via {"name":\ "my_function"} forces the model to call that function.
+	// "none" is the default when no functions are present. "auto" is the default if functions are present.
+	/* Example:
+	FunctionCall: (map[string]interface {}) (len=2) {
+	   (string) (len=4) "name": (string) (len=19) "get_current_weather",
+	   (string) (len=9) "arguments": (string) (len=60) "{\n  \"format\": \"celsius\",\n  \"location\": \"Glasgow, Scotland\"\n}"
+	}
+	*/
+	FunctionCall any `json:"function_call,omitempty"` // string or map
+}
+
+// Under the hood, functions are injected into the system message in a syntax the model has been trained on.
+// This means functions count against the model's context limit and are billed as input tokens.
+// If running into context limits, we suggest limiting the number of functions or the length of documentation you provide for function parameters.
+type ChatCompletionFunction struct {
+	// The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
+	Name string `json:"name,omitempty"`
+
+	// The description of what the function does.
+	Description string `json:"description,omitempty"`
+
+	// The parameters the functions accepts, described as a JSON Schema object.
+	Parameters *FunctionParameters `json:"parameters,omitempty"`
+}
+
+type FunctionParameters struct {
+	Type       string                      `json:"type"` // object
+	Properties map[string]FunctionProperty `json:"properties"`
+	Required   []string                    `json:"required,omitempty"`
+}
+
+type FunctionProperty struct {
+	Type        string   `json:"type"` // string, number, boolean, object, null, anyof
+	Description string   `json:"description,omitempty"`
+	Enum        []string `json:"enum,omitempty"`
 }
 
 // ChatCompletionRequest represents a request structure for chat completion API.
@@ -22,18 +71,21 @@ type ChatCompletionRequest struct {
 	// Only required if no default api key was initialized
 	APIKEY string `json:"-"`
 
-	Model            Model                   `json:"model"`
-	Messages         []ChatCompletionMessage `json:"messages"`
-	MaxTokens        int                     `json:"max_tokens,omitempty"`
-	Temperature      float32                 `json:"temperature,omitempty"`
-	TopP             float32                 `json:"top_p,omitempty"`
-	N                int                     `json:"n,omitempty"`
-	Stream           bool                    `json:"stream,omitempty"`
-	Stop             []string                `json:"stop,omitempty"`
-	PresencePenalty  float32                 `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32                 `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]int          `json:"logit_bias,omitempty"`
-	User             string                  `json:"user,omitempty"`
+	Model Model `json:"model"`
+
+	Messages  []ChatCompletionMessage  `json:"messages"`
+	Functions []ChatCompletionFunction `json:"functions,omitempty"`
+
+	MaxTokens        int            `json:"max_tokens,omitempty"`
+	Temperature      float32        `json:"temperature,omitempty"`
+	TopP             float32        `json:"top_p,omitempty"`
+	N                int            `json:"n,omitempty"`
+	Stream           bool           `json:"stream,omitempty"`
+	Stop             []string       `json:"stop,omitempty"`
+	PresencePenalty  float32        `json:"presence_penalty,omitempty"`
+	FrequencyPenalty float32        `json:"frequency_penalty,omitempty"`
+	LogitBias        map[string]int `json:"logit_bias,omitempty"`
+	User             string         `json:"user,omitempty"`
 }
 
 type ChatCompletionChoice struct {

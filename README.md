@@ -29,6 +29,93 @@ func main() {
 }
 ```
 
+Here is an example on how to use the new functions calls in the chat completion of OpenAI:
+
+```go
+package main
+
+import (
+	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+	"github.com/davecgh/go-spew/spew"
+)
+
+func main() {
+    req := &openai.ChatCompletionRequest{
+		APIKEY:      creds.OpenAIAPIKey,
+		Model:       openai.GPT3_5_turbo_4k_0613,
+		Temperature: 0.7,
+		Functions: []openai.ChatCompletionFunction{{
+			Name:        "get_current_weather",
+			Description: "Get the current weather",
+			Parameters: &openai.FunctionParameters{
+				Type:     "object",
+				Required: []string{"location", "format"},
+				Properties: map[string]openai.FunctionProperty{
+					"location": {
+						Type:        "string",
+						Description: "The city and state, e.g. San Francisco, CA",
+					},
+					"format": {
+						Type:        "string",
+						Description: "The temperature unit to use. Infer this from the users location.",
+						Enum:        []string{"celsius", "fahrenheit"},
+					},
+				},
+			},
+		}},
+		Messages: []openai.ChatCompletionMessage{{
+			Role:    "user",
+			Content: "what is the weather like today",
+		}},
+	}
+	resp, err := openai.CreateChatCompletion(req)
+	if err != nil {
+		panic(err)
+	}
+
+	spew.Dump(resp.Choices[0])
+    /*
+(openai.ChatCompletionChoice) {
+ Index: (int) 0,
+ Message: (openai.ChatCompletionMessage) {
+  Role: (openai.MessageRole) (len=9) "assistant",
+  Content: (string) (len=22) "Where are you located?",
+  Name: (string) "",
+  FunctionCall: (interface {}) <nil>
+ },
+ FinishReason: (string) (len=4) "stop"
+}
+    */
+
+	req.Messages = append(req.Messages, resp.Choices[0].Message)
+	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
+		Role:    "user",
+		Content: "I'm in Glasgow, Scotland",
+	})
+	resp, err = openai.CreateChatCompletion(req)
+	if err != nil {
+		panic(err)
+	}
+
+	spew.Dump(resp.Choices[0])
+    /*
+(openai.ChatCompletionChoice) {
+ Index: (int) 0,
+ Message: (openai.ChatCompletionMessage) {
+  Role: (openai.MessageRole) (len=9) "assistant",
+  Content: (string) "",
+  Name: (string) "",
+  FunctionCall: (map[string]interface {}) (len=2) {
+   (string) (len=4) "name": (string) (len=19) "get_current_weather",
+   (string) (len=9) "arguments": (string) (len=60) "{\n  \"format\": \"celsius\",\n  \"location\": \"Glasgow, Scotland\"\n}"
+  }
+ },
+ FinishReason: (string) (len=13) "function_call"
+}
+    */
+}
+```
+
 Here is an example on how to create a chat completion:
 
 ```go
@@ -37,7 +124,7 @@ package main
 import (
 	"fmt"
 	"log"
-    	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+    "github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 )
 
 func main() {
