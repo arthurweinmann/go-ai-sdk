@@ -199,18 +199,6 @@ If a retry fails, it will multiply the delay by backoffFactor (which is 2) and s
 
 The delay keeps increasing until the request succeeds or until it reaches the maximum number of retries.
 
-# Disclaimer
-
-⚠️ In Active Development ⚠️
-
-Please be aware that this project is currently in the midst of active development.
-
-This project is a fundamental part of a bigger project I am concurrently developing. Therefore, it is very specific to the needs and requirements of that particular project. Some of the modules or features in this project might not be directly usable or understandable outside the context of the bigger project.
-
-Contributors and issue reporting are very welcomed.
-
-Please use this project at your own risk. This project is provided "as is" without any express or implied warranties.
-
 # License
 
 Please refer to the LICENSE file for information on the rights and limitations under the project's license.
