@@ -41,7 +41,7 @@ import (
 
 func main() {
     req := &openai.ChatCompletionRequest{
-		APIKEY:      creds.OpenAIAPIKey,
+		APIKEY:      "YOUR_API_KEY",
 		Model:       openai.GPT3_5_turbo_4k_0613,
 		Temperature: 0.7,
 		Functions: []openai.ChatCompletionFunction{{
