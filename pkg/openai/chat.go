@@ -61,7 +61,7 @@ type FunctionParameters struct {
 }
 
 type FunctionProperty struct {
-	Type        string   `json:"type"` // string, number, array, boolean, object, null, anyof
+	Type        string   `json:"type"` // string, number, integer, array, boolean, object, null, anyof
 	Description string   `json:"description,omitempty"`
 	Enum        []string `json:"enum,omitempty"`
 

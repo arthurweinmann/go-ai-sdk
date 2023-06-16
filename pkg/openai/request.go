@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -182,16 +183,19 @@ func requestnowait(method, path string, body, response any, apikey string) error
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		var errRes ErrorResponse
-		err = json.NewDecoder(resp.Body).Decode(&errRes)
+		b, err := io.ReadAll(resp.Body)
+		if err == nil {
+			err = json.Unmarshal(b, &errRes)
+		}
 		if err != nil || errRes.Error == nil {
 			reqErr := RequestError{
 				StatusCode: resp.StatusCode,
-				Err:        err,
+				Err:        fmt.Errorf("%v: %v", err, string(b)), // sometimes when OpenAI nginx fails the error messages is an HTML Page
 			}
-			err = fmt.Errorf("error, %w", &reqErr)
+			err = fmt.Errorf("error requesting %s, %w", u, &reqErr)
 		} else {
 			errRes.Error.StatusCode = resp.StatusCode
-			err = fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
+			err = fmt.Errorf("error requesting %s, status code: %d, message: %w", u, resp.StatusCode, errRes.Error)
 		}
 
 		// if resp.StatusCode == 429 {
