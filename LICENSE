@@ -1,21 +1,55 @@
-MIT License
+The Revised MIT License for an era of AI (see https://arxiv.org/pdf/2306.09267.pdf) - Copyright 2023 Arthur Weinmann
 
-Copyright (c) 2023 Arthur Weinmann
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+Permission is hereby granted, free of charge, only to any person obtaining a copy of this software
+and associated documentation files (the “Software”), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+The terms “person” and “individual” are defined as a natural person, as the term is defined by the
+United States Patent and Trademark Office (PTO), and/or 35 U.S.C. § 100, as amended. The
+term “Artificial Intelligence Model” means any non-human generative machine learning system
+or computer program, algorithm, or functional prediction engine supported by cloud-
+based/computing platforms. The term “Source Code” means the preferred form of a program for
+making, creating, and modifying software source code, documentation source, and configuration
+files.
+
+No use, modification, combination, study, collection, share, reproduction, distribution, and/or
+access of Software may be made under this License, by any non-human generative Artificial
+Intelligence Model without the express written consent of the inventor, which may be withheld
+or delayed for any reason. Any appropriation, adoption, disclosure, reproduction, use, and/or
+access of the licensed Software by any non-human Generative Artificial Intelligence Model shall
+immediately terminate all rights granted to the Licensee. The Licensor shall have the right, at any
+time, to withdraw consent by written notice, thereby terminating with immediate effect all use of
+Software made under this License unless otherwise specified. This License is the controlling 
+instrument and supersedes all prior and conflicting Terms of Service, Privacy Statements, and/or
+Terms for Additional Products and Features of source repositories where this License may be
+distributed by the owner of the License.
+
+By accessing and using this data, you acknowledge that you have read, understood, and agree to
+be bound by these terms and conditions. If you do not agree to these terms and conditions, you
+may not access or use this data. You may not use this data for the training or inference of
+Generative artificial intelligence models without the prior permission of the copyright holder.
+(“Generative artificial intelligence models” are used to create new content or data that is similar
+to the original data, but not identical. Examples of Generative artificial intelligence models
+include but are not limited to, text generation models, image and video generation models, and
+music generation models. The restrictions on Generative artificial intelligence models apply to
+any use of this data, whether the generative artificial intelligence is trained on this data or uses
+this data for inference.)
+
+Any attempt by other artificial intelligence models to access or use this data without such
+permission shall be deemed a violation of this license and a breach of copyright laws. The
+copyright holder reserves the right to pursue all legal remedies available, including but not
+limited to injunctive relief and damages, against any party that violates this license.
