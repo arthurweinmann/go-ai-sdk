@@ -164,6 +164,9 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 		numTokens += 12
 	}
 
+	// We do not seem to get it quite right in some scenario
+	numTokens += 50
+
 	switch req.Model {
 	default:
 		return 0, fmt.Errorf("model %s not yet supported", req.Model)
