@@ -82,7 +82,11 @@ type ChatCompletionRequest struct {
 	Messages  []ChatCompletionMessage  `json:"messages"`
 	Functions []ChatCompletionFunction `json:"functions,omitempty"`
 
-	MaxTokens        int            `json:"max_tokens,omitempty"`
+	// Set to -1 to let the function automatically compute the maximum number of remaining token in the context
+	// window size of the selected model
+	// The function returns an error if there are not enough token left for the provided messages and functions
+	MaxTokens int `json:"max_tokens,omitempty"`
+
 	Temperature      float32        `json:"temperature,omitempty"`
 	TopP             float32        `json:"top_p,omitempty"`
 	N                int            `json:"n,omitempty"`
@@ -119,7 +123,20 @@ func CreateChatCompletion(req *ChatCompletionRequest) (*ChatCompletionResponse, 
 		return nil, fmt.Errorf("unknown model: %s", req.Model)
 	}
 
-	err := request("POST", urlSuffix_chatcompletion, req, resp, req.APIKEY)
+	var err error
+
+	if req.MaxTokens == -1 {
+		req.MaxTokens, err = GetMaxRemainingTokensChatCompletion(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if req.MaxTokens <= 16 {
+			return nil, fmt.Errorf("we do not have enough token left in the context window of the model %s, we have %d token left", req.Model, req.MaxTokens)
+		}
+	}
+
+	err = request("POST", urlSuffix_chatcompletion, req, resp, req.APIKEY)
 	if err != nil {
 		return nil, err
 	}
