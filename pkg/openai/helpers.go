@@ -14,7 +14,7 @@ func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
 	switch m {
 	default:
 		return 0, fmt.Errorf("model %s not implemented yet for GetMaxRemainingTokens", m)
-	case GPT3_5_turbo_4k, GPT4_8k, GPT4_32k:
+	case GPT3_5_turbo_4k, GPT4_8k, GPT4_32k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613, GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k, GPT4_8k_0613, GPT4_32k_0613:
 		encoding = "cl100k_base"
 	}
 
