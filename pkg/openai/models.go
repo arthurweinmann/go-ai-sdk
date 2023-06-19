@@ -31,3 +31,12 @@ const (
 
 	CodeDavinci2_8k Model = "code-davinci-002"
 )
+
+type ContextLength int
+
+const (
+	Context4K  ContextLength = 4096
+	Context8K  ContextLength = 8192
+	Context16K ContextLength = 16384
+	Context32K ContextLength = 32768
+)

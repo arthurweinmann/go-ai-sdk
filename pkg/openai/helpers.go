@@ -30,12 +30,12 @@ func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
 	default:
 		return 0, fmt.Errorf("model %s not yet supported", m)
 	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613:
-		return 4096 - tokencount, nil
+		return int(Context4K) - tokencount, nil
 	case GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k:
-		return 16384 - tokencount, nil
+		return int(Context16K) - tokencount, nil
 	case GPT4_8k, GPT4_8k_0613:
-		return 8192 - tokencount, nil
+		return int(Context8K) - tokencount, nil
 	case GPT4_32k, GPT4_32k_0613:
-		return 32768 - tokencount, nil
+		return int(Context32K) - tokencount, nil
 	}
 }
