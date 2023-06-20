@@ -67,7 +67,6 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 	}
 
 	var numTokens int
-	var atleastOneFunction bool
 	for _, message := range messages {
 		numTokens += tokenPerMessage
 		if message.Content != "" {
@@ -87,7 +86,7 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 		}
 		funcCall, ok := message.FunctionCall.(map[string]any)
 		if ok {
-			atleastOneFunction = true
+			numTokens += 12
 			b, err := json.Marshal(funcCall)
 			if err != nil {
 				return 0, err
@@ -102,7 +101,6 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 	numTokens += 3 // every reply is primed with <|start|>assistant<|message|>
 
 	for _, cf := range req.Functions {
-		atleastOneFunction = true
 		if cf.Name != "" {
 			tokencount, err := pythontool.CountTokens(encoding, cf.Name)
 			if err != nil {
@@ -158,10 +156,6 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 				}
 			}
 		}
-	}
-
-	if atleastOneFunction {
-		numTokens += 12
 	}
 
 	// We do not seem to get it quite right in some scenario

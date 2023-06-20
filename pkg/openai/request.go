@@ -203,6 +203,25 @@ func requestnowait(method, path string, body, response any, apikey string) error
 		// 	return Err429
 		// }
 
+		// We may get context overflow errors until we can figure out a reliable way to compute the number of tokens induced by the functions list and calls
+		// features
+		isContextLengthOverflow, delta, e := IsErrorContextLengthOverflow(err.Error())
+		if e != nil {
+			fmt.Println("Could not compute context length overflow correction:", e)
+		} else if isContextLengthOverflow {
+			fmt.Println("Encountered maximum context length overflow error, decreasing the maxtokens parameters by", delta)
+			switch t := body.(type) {
+			default:
+				panic(fmt.Errorf("Should not happen: %T", t))
+			case *CompletionRequest:
+				t.MaxTokens += delta
+			case *ChatCompletionRequest:
+				t.MaxTokens += delta
+			case *EditsRequest:
+			case *EmbeddingRequest:
+			}
+		}
+
 		return err
 	}
 
