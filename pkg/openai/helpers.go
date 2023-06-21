@@ -11,6 +11,26 @@ import (
 // Watchout for functions definitions which count toward the model context length. I did not find information as to the function syntax
 // used by openai to compute its number of tokens. You can probably approximate it.
 func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
+	tokencount, err := CountTokens(prompt, m)
+	if err != nil {
+		return 0, err
+	}
+
+	switch m {
+	default:
+		return 0, fmt.Errorf("model %s not yet supported", m)
+	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613:
+		return int(Context4K) - tokencount, nil
+	case GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k:
+		return int(Context16K) - tokencount, nil
+	case GPT4_8k, GPT4_8k_0613:
+		return int(Context8K) - tokencount, nil
+	case GPT4_32k, GPT4_32k_0613:
+		return int(Context32K) - tokencount, nil
+	}
+}
+
+func CountTokens(prompt string, m Model) (int, error) {
 	var encoding string
 	switch m {
 	default:
@@ -27,21 +47,30 @@ func GetMaxRemainingTokens(prompt string, m Model) (int, error) {
 	// TODO: Consider the following: `every reply is primed with <|start|>assistant<|message|>`
 	tokencount += 50
 
-	switch m {
-	default:
-		return 0, fmt.Errorf("model %s not yet supported", m)
-	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613:
-		return int(Context4K) - tokencount, nil
-	case GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k:
-		return int(Context16K) - tokencount, nil
-	case GPT4_8k, GPT4_8k_0613:
-		return int(Context8K) - tokencount, nil
-	case GPT4_32k, GPT4_32k_0613:
-		return int(Context32K) - tokencount, nil
-	}
+	return tokencount, nil
 }
 
 func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error) {
+	numTokens, err := CountTokensCompletion(req)
+	if err != nil {
+		return 0, err
+	}
+
+	switch req.Model {
+	default:
+		return 0, fmt.Errorf("model %s not yet supported", req.Model)
+	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613:
+		return int(Context4K) - numTokens, nil
+	case GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k:
+		return int(Context16K) - numTokens, nil
+	case GPT4_8k, GPT4_8k_0613:
+		return int(Context8K) - numTokens, nil
+	case GPT4_32k, GPT4_32k_0613:
+		return int(Context32K) - numTokens, nil
+	}
+}
+
+func CountTokensCompletion(req *ChatCompletionRequest) (int, error) {
 	messages := req.Messages
 
 	var tokenPerMessage, tokenPerName int
@@ -161,16 +190,5 @@ func GetMaxRemainingTokensChatCompletion(req *ChatCompletionRequest) (int, error
 	// We do not seem to get it quite right in some scenario
 	numTokens += 50
 
-	switch req.Model {
-	default:
-		return 0, fmt.Errorf("model %s not yet supported", req.Model)
-	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0301, GPT3_5_turbo_4k_0613:
-		return int(Context4K) - numTokens, nil
-	case GPT3_5_turbo_16k_0613, GPT3_5_turbo_16k:
-		return int(Context16K) - numTokens, nil
-	case GPT4_8k, GPT4_8k_0613:
-		return int(Context8K) - numTokens, nil
-	case GPT4_32k, GPT4_32k_0613:
-		return int(Context32K) - numTokens, nil
-	}
+	return numTokens, nil
 }
