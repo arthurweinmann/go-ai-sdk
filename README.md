@@ -1,6 +1,6 @@
-<div style="display: block; width: 100%; text-align: center;">
-    <img src="doc/banner.png" style="display: inline-block; max-width: 100%;"/>
-</div>
+<p align="center">
+    <img src="doc/banner.png"/>
+</p>
 
 A comprehensive collection of Golang SDKs for various AI APIs. Use each independently, or leverage the universal interface to seamlessly interact with multiple APIs in a uniform way. Enables easy swapping between AI services without changing your core codebase.
 
