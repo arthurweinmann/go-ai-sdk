@@ -6,11 +6,17 @@ A comprehensive collection of Golang SDKs for various AI APIs. Use each independ
 
 # Current Status
 
-Currently, we only support OpenAI, and the implementation of its APIs remains under development.
+Currently, we only support:
+
+    - OpenAI, and the implementation of its APIs remains under development.
+
+    - Google Cloud Natural Language APIs, also under development.
 
 # How to use
 
 Import this golang module with `go get -u github.com/arthurweinmann/go-ai-sdk`.
+
+## OpenAI
 
 You may initialize OpenAI's sdk with a default API key. It is optional:
 
@@ -179,7 +185,7 @@ package main
 import (
 	"fmt"
 	"log"
-    	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+    "github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 )
 
 func main() {
@@ -191,13 +197,79 @@ func main() {
 }
 ```
 
-## Retry feature
+## Google Natural Language API
+
+You first have to initialize Google Natural Language's sdk with your API key:
+
+```go
+package main
+
+import (
+    "github.com/arthurweinmann/go-ai-sdk/pkg/googlenl"
+)
+
+func main() {
+    err := googlenl.Init("YOUR_API_KEY")
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+You can for example extract entities from a text:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "context"
+    "github.com/arthurweinmann/go-ai-sdk/pkg/googlenl"
+)
+
+func main() {
+    err := googlenl.Init("YOUR_API_KEY")
+    if err != nil {
+        panic(err)
+    }
+
+    text := "Google, headquartered in Mountain View, unveiled the new Android phone at the Consumer Electronic Show. Sundar Pichai is the CEO of Google."
+
+	resp, err := googlenl.AnalyzeEntities(context.Background(), text)
+	if err != nil {
+		log.Fatalf("Failed to analyze text: %v", err)
+	}
+
+	// Print the results
+	fmt.Printf("Language of the text: %s\n", resp.Language)
+	for _, entity := range resp.Entities {
+		fmt.Printf("Entity: %s\n", entity.Name)
+		fmt.Printf("Type: %v\n", entity.Type)
+		fmt.Printf("Salience: %.2f\n", entity.Salience)
+		for key, value := range entity.Metadata {
+			fmt.Printf("Metadata: %s: %s\n", key, value)
+		}
+		for _, mention := range entity.Mentions {
+			fmt.Printf("Mention: Type %v, Text %s\n", mention.Type, mention.Text.Content)
+		}
+	}
+}
+```
+
+# Retry feature
 
 If a request fails, it is added to a waiting list. The error is printed, and the function waits for the retry result asynchronously through a golang channel. A goroutine wakes up every so often and check all the requests in the waiting list. It will pick up those requests whose RetryTime is past the current time and retry them one by one.
     
 If a retry fails, it will multiply the delay by backoffFactor (which is 2) and set a new RetryTime for the next retry. Then the request is added back to requestswaiting for the next retry. It ceases to retry requests if one fails, and returns to sleep mode until its next scheduled awakening.
 
 The delay keeps increasing until the request succeeds or until it reaches the maximum number of retries.
+
+## Note
+
+The OpenAI API can be unpredictable. At times, it throws 500 error messages even for valid requests. Therefore, we retry any error-producing request. This is beyond the usual practice of retrying just the 429 rate limit errors. 
+
+Also, there's insufficient documentation at the moment on how to count tokens for the new function calls feature. Due to this, we handle context length overflow errors differently. We parse those errors and automatically adjust the MaxTokens parameter for following attempts. This ensures that operations run smoothly.
 
 # License
 
