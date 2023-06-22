@@ -87,7 +87,7 @@ type ChatCompletionRequest struct {
 	// The function returns an error if there are not enough token left for the provided messages and functions
 	//
 	// Set to -2 to let the function switch between similar models with different maximum context length depending
-	// on the token length of the request
+	// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k)
 	MaxTokens int `json:"max_tokens,omitempty"`
 
 	Temperature      float32        `json:"temperature,omitempty"`

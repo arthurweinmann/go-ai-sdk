@@ -51,6 +51,17 @@ func main() {
     req := &openai.ChatCompletionRequest{
 		APIKEY:      "YOUR_API_KEY",
 		Model:       openai.GPT3_5_turbo_4k_0613,
+		
+		// Set to any positive value to limit the completion number of tokens in the response
+		//
+		// Set to -1 to let the function automatically compute the maximum number of remaining token in the context
+		// window size of the selected model
+		// The function returns an error if there are not enough token left for the provided messages and functions
+		//
+		// Set to -2 to let the function switch between similar models with different maximum context length depending
+		// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k)
+		MaxTokens: -2,
+
 		Temperature: 0.7,
 		Functions: []openai.ChatCompletionFunction{{
 			Name:        "get_current_weather",
@@ -123,6 +134,14 @@ func main() {
     */
 }
 ```
+
+The `MaxTokens` value controls the length of the response, i.e., the number of tokens it contains. 
+
+If you set it to any positive number, you can cap the response's size accordingly.
+
+If `MaxTokens` is set to -1, the function will automatically adjust the maximum token count to fit within the context window of the chosen model. However, this might cause an error if the available tokens are insufficient for the messages and operations provided.
+
+By setting `MaxTokens` to -2, the function gains the flexibility to alternate between similar models with varying context lengths, depending on the request's token length. For instance, it can seamlessly transition from GPT3_5_turbo_4k to GPT3_5_turbo_16k, depending on the length of the request.
 
 Here is an example on how to create a chat completion:
 
