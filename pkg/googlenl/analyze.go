@@ -72,3 +72,14 @@ func ClassifyText(ctx context.Context, text string) (*languagepb.ClassifyTextRes
 		},
 	})
 }
+
+func ModerateText(ctx context.Context, text string, documentType languagepb.Document_Type) (*languagepb.ModerateTextResponse, error) {
+	return NLUClient.ModerateText(ctx, &languagepb.ModerateTextRequest{
+		Document: &languagepb.Document{
+			Type: documentType,
+			Source: &languagepb.Document_Content{
+				Content: text,
+			},
+		},
+	})
+}
