@@ -60,6 +60,9 @@ func main() {
 		//
 		// Set to -2 to let the function switch between similar models with different maximum context length depending
 		// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k)
+		// In this mode, it will set the MaxTokens parameter to the maximum remaining ones.
+		//
+		// Set to -3 for a similar switching behaviour as -2 but leaves MaxTokens for the default value to apply
 		MaxTokens: -2,
 
 		Temperature: 0.7,
@@ -141,7 +144,9 @@ If you set it to any positive number, you can cap the response's size accordingl
 
 If `MaxTokens` is set to -1, the function will automatically adjust the maximum token count to fit within the context window of the chosen model. However, this might cause an error if the available tokens are insufficient for the messages and operations provided.
 
-By setting `MaxTokens` to -2, the function gains the flexibility to alternate between similar models with varying context lengths, depending on the request's token length. For instance, it can seamlessly transition from GPT3_5_turbo_4k to GPT3_5_turbo_16k, depending on the length of the request.
+By setting `MaxTokens` to -2, the function gains the flexibility to alternate between similar models with varying context lengths, depending on the request's token length. For instance, it can seamlessly transition from GPT3_5_turbo_4k to GPT3_5_turbo_16k, depending on the length of the request. In this mode, it will set the MaxTokens parameter to the maximum remaining ones.
+
+Finally, by setting `MaxTokens` to -3, you get a similar switching behaviour as in -2 mode but it leaves MaxTokens for the default value to apply.
 
 Here is an example on how to create a chat completion:
 

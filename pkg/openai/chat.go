@@ -87,7 +87,10 @@ type ChatCompletionRequest struct {
 	// The function returns an error if there are not enough token left for the provided messages and functions
 	//
 	// Set to -2 to let the function switch between similar models with different maximum context length depending
-	// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k)
+	// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k).
+	// In this mode, it will set the MaxTokens parameter to the maximum remaining ones.
+	//
+	// Set to -3 for a similar switching behaviour as -2 but leaves MaxTokens for the default value to apply
 	MaxTokens int `json:"max_tokens,omitempty"`
 
 	Temperature      float32        `json:"temperature,omitempty"`
@@ -141,7 +144,7 @@ func CreateChatCompletion(req *ChatCompletionRequest) (*ChatCompletionResponse, 
 			if req.MaxTokens <= 16 {
 				return nil, fmt.Errorf("we do not have enough token left in the context window of the model %s, we have %d token left", req.Model, req.MaxTokens)
 			}
-		case -2:
+		case -2, -3:
 			count, err := CountTokensCompletion(req)
 			if err != nil {
 				return nil, err
@@ -157,6 +160,11 @@ func CreateChatCompletion(req *ChatCompletionRequest) (*ChatCompletionResponse, 
 				maxcontentlength = int(newmodel.GetContextLength())
 			}
 			req.Model = newmodel
+			if req.MaxTokens == -2 {
+				req.MaxTokens = maxcontentlength - count
+			} else if req.MaxTokens == -3 {
+				req.MaxTokens = 0
+			}
 		}
 	}
 
