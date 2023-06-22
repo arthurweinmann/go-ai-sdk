@@ -2,15 +2,17 @@
     <img src="doc/banner.png"/>
 </p>
 
-A comprehensive collection of Golang SDKs for various AI APIs. Use each independently, or leverage the universal interface to seamlessly interact with multiple APIs in a uniform way. Enables easy swapping between AI services without changing your core codebase.
+A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use each independently, or leverage the universal interface to seamlessly interact with multiple APIs in a uniform way. Enables easy swapping between AI services without changing your core codebase.
 
 # Current Status
 
-Currently, we only support:
+Currently, we support:
 
     - OpenAI, and the implementation of its APIs remains under development.
 
     - Google Cloud Natural Language APIs, also under development.
+
+    - Wikipedia (Wikimedia) API
 
 # How to use
 
@@ -254,6 +256,78 @@ func main() {
 			fmt.Printf("Mention: Type %v, Text %s\n", mention.Type, mention.Text.Content)
 		}
 	}
+}
+```
+
+## Wikipedia (Wikimedia)
+
+Here is a simple example of how you might use this sdk to query Wikipedia for a specific topic and get the related information. In this case, we are interested in "Artificial Intelligence".
+
+First, make sure to initialize your client:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+    "github.com/arthurweinmann/go-ai-sdk/pkg/wikipedia"
+)
+
+func main() {
+	// Initialize the Wikipedia client
+	err := wikipedia.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// ...
+
+```
+
+Then, you can retrieve a list of pages that start with your query, in this case "Artificial Intelligence", and limit the results to the first 10:
+
+```go
+	// Get the first 10 pages that start with "Artificial Intelligence"
+	pages, err := wikipedia.Client.GetPrefixResults("Artificial Intelligence", 10)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, page := range pages {
+		fmt.Printf("Page ID: %d, Page Title: %s, Page URL: %s\n", page.ID, page.Title, page.URL)
+	}
+
+```
+
+You can also retrieve the extracts for a list of page titles. Let's get the extracts for the first page from the previous result:
+
+```go
+	// Get the extracts for the first page
+	extracts, err := wikipedia.Client.GetExtracts([]string{pages[0].Title})
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, extract := range extracts {
+		fmt.Printf("Page Title: %s, Extract: %s\n", extract.Meta.Title, extract.Extract)
+	}
+
+```
+
+Finally, you can retrieve the categories and sections associated with a specific page ID. Let's do it for the first page from the previous result:
+
+```go
+	// Get the categories for the first page
+	categories, err := wikipedia.Client.GetCategories(pages[0].ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Page Title: %s, Categories: %v\n", categories.Meta.Title, categories.Categories)
+
+	// Get the sections for the first page
+	sections, err := wikipedia.Client.GetSections(pages[0].ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Page Title: %s, Sections: %v\n", sections.Meta.Title, sections.Sections)
 }
 ```
 
