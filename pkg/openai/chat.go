@@ -85,6 +85,9 @@ type ChatCompletionRequest struct {
 	// Set to -1 to let the function automatically compute the maximum number of remaining token in the context
 	// window size of the selected model
 	// The function returns an error if there are not enough token left for the provided messages and functions
+	//
+	// Set to -2 to let the function switch between similar models with different maximum context length depending
+	// on the token length of the request
 	MaxTokens int `json:"max_tokens,omitempty"`
 
 	Temperature      float32        `json:"temperature,omitempty"`
@@ -125,14 +128,35 @@ func CreateChatCompletion(req *ChatCompletionRequest) (*ChatCompletionResponse, 
 
 	var err error
 
-	if req.MaxTokens == -1 {
-		req.MaxTokens, err = GetMaxRemainingTokensChatCompletion(req)
-		if err != nil {
-			return nil, err
-		}
+	if req.MaxTokens < 0 {
+		switch req.MaxTokens {
+		default:
+			return nil, fmt.Errorf("We got an invalid MaxTokens parameter of %d, you may use -1 or -2 or a positive value", req.MaxTokens)
+		case -1:
+			req.MaxTokens, err = GetMaxRemainingTokensChatCompletion(req)
+			if err != nil {
+				return nil, err
+			}
 
-		if req.MaxTokens <= 16 {
-			return nil, fmt.Errorf("we do not have enough token left in the context window of the model %s, we have %d token left", req.Model, req.MaxTokens)
+			if req.MaxTokens <= 16 {
+				return nil, fmt.Errorf("we do not have enough token left in the context window of the model %s, we have %d token left", req.Model, req.MaxTokens)
+			}
+		case -2:
+			count, err := CountTokensCompletion(req)
+			if err != nil {
+				return nil, err
+			}
+			newmodel := req.Model
+			maxcontentlength := int(newmodel.GetContextLength())
+			isnext := true
+			for isnext && maxcontentlength < count+16 {
+				isnext, newmodel = newmodel.GetSimilarWithNextContextLength()
+				if !isnext {
+					return nil, fmt.Errorf("We do not have a model similar to %s with a larger maximum context length", req.Model)
+				}
+				maxcontentlength = int(newmodel.GetContextLength())
+			}
+			req.Model = newmodel
 		}
 	}
 
