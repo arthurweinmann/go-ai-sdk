@@ -12,7 +12,7 @@ Currently, we support:
 
     - Google Cloud Natural Language APIs, also under development.
 
-    - Wikipedia (Wikimedia) API
+    - Wikipedia (Wikimedia) Knowledge API
 
 # How to use
 
@@ -331,7 +331,7 @@ Finally, you can retrieve the categories and sections associated with a specific
 }
 ```
 
-# Retry feature
+# OpenAI Retry feature
 
 If a request fails, it is added to a waiting list. The error is printed, and the function waits for the retry result asynchronously through a golang channel. A goroutine wakes up every so often and check all the requests in the waiting list. It will pick up those requests whose RetryTime is past the current time and retry them one by one.
     
