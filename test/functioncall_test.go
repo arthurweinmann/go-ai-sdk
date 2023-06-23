@@ -8,49 +8,30 @@ import (
 	"testing"
 
 	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var creds = &struct {
 	OpenAIAPIKey string `json:"OPENAI_API_KEY,omitempty"`
 }{}
 
-func TestFunctionCall(t *testing.T) {
-	err := testSetup()
-	if err != nil {
-		panic(err)
-	}
-	defer testCleanup()
-
-	err = testFunctionCall()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func testSetup() error {
+func TestSetup(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	b, err := os.ReadFile(filepath.Join(wd, "credentials.json"))
 	if err != nil {
-		return fmt.Errorf("%v (you may need to run `go test -v` in the directory of the test file to enable it to find the credentials.json file with your openai api key)", err)
+		panic(fmt.Errorf("%v (you may need to run `go test -v` in the directory of the test file to enable it to find the credentials.json file with your openai api key)", err))
 	}
 
 	err = json.Unmarshal(b, creds)
 	if err != nil {
-		return err
+		panic(err)
 	}
-
-	return nil
 }
 
-func testCleanup() {
-}
-
-func testFunctionCall() error {
+func Example_openaiFunctionCall() {
 	req := &openai.ChatCompletionRequest{
 		APIKEY:      creds.OpenAIAPIKey,
 		Model:       openai.GPT3_5_turbo_4k_0613,
@@ -81,10 +62,11 @@ func testFunctionCall() error {
 	}
 	resp, err := openai.CreateChatCompletion(req)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
 
-	spew.Dump(resp.Choices[0])
+	fmt.Println(resp.Choices[0].Message.Role)
 
 	req.Messages = append(req.Messages, resp.Choices[0].Message)
 	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
@@ -93,10 +75,13 @@ func testFunctionCall() error {
 	})
 	resp, err = openai.CreateChatCompletion(req)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
 
-	spew.Dump(resp.Choices[0])
+	fmt.Println(resp.Choices[0].Message.Role, resp.Choices[0].Message.FunctionCall.(map[string]any)["name"])
 
-	return nil
+	// Output:
+	// assistant
+	// assistant get_current_weather
 }
