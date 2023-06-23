@@ -14,6 +14,16 @@ Currently, we support:
 
     - Wikipedia (Wikimedia) Knowledge API
 
+# Documentation
+
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk)
+
+Documentation for the project can be viewed online without installing this package by using the excellent GoDoc site here:
+[https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk](https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk)
+
+You may explore directories, for example the OpenAI one:
+[https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk/pkg/openai](https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk/pkg/openai)
+
 # How to use
 
 Import this golang module with `go get -u github.com/arthurweinmann/go-ai-sdk`.
