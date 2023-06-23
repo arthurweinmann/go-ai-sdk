@@ -4,6 +4,20 @@
 
 A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use each independently, or leverage the universal interface to seamlessly interact with multiple APIs in a uniform way. Enables easy swapping between AI services without changing your core codebase.
 
+# Table of contents
+
+<!--ts-->
+   * [Current Status](#current-status)
+   * [Documentation](#documentation)
+   * [How to use](#how-to-use)
+      * [OpenAI](#openai)
+      * [Google Natural Language API](#google-natural-language-api)
+      * [Wikipedia (Wikimedia)](#wikipedia)
+   * [Request Retry feature](#request-retry-feature)
+      * [Note on OpenAI Retries](#note-on-openai-retries)
+   * [License](#license)
+<!--te-->
+
 # Current Status
 
 Currently, we support:
@@ -293,7 +307,7 @@ func main() {
 }
 ```
 
-## Wikipedia (Wikimedia)
+## Wikipedia
 
 Here is a simple example of how you might use this sdk to query Wikipedia for a specific topic and get the related information. In this case, we are interested in "Artificial Intelligence".
 
@@ -365,7 +379,7 @@ Finally, you can retrieve the categories and sections associated with a specific
 }
 ```
 
-# OpenAI Retry feature
+# Request Retry feature
 
 If a request fails, it is added to a waiting list. The error is printed, and the function waits for the retry result asynchronously through a golang channel. A goroutine wakes up every so often and check all the requests in the waiting list. It will pick up those requests whose RetryTime is past the current time and retry them one by one.
     
@@ -373,7 +387,7 @@ If a retry fails, it will multiply the delay by backoffFactor (which is 2) and s
 
 The delay keeps increasing until the request succeeds or until it reaches the maximum number of retries.
 
-## Note
+## Note on OpenAI Retries
 
 The OpenAI API can be unpredictable. At times, it throws 500 error messages even for valid requests. Therefore, we retry any error-producing request. This is beyond the usual practice of retrying just the 429 rate limit errors. 
 
