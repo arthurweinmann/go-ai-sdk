@@ -20,6 +20,8 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
 
 # Current Status
 
+This project is currently in a robust phase of active development. Kindly stay connected for further updates and advancements.
+
 Currently, we support:
 
     - OpenAI, and the implementation of its APIs remains under development.
