@@ -378,7 +378,6 @@ Finally, you can retrieve the categories and sections associated with a specific
 		log.Fatal(err)
 	}
 	fmt.Printf("Page Title: %s, Sections: %v\n", sections.Meta.Title, sections.Sections)
-}
 ```
 
 # Request Retry feature
