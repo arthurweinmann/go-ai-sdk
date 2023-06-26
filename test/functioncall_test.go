@@ -31,7 +31,7 @@ func TestSetup(t *testing.T) {
 	}
 }
 
-func Example_openaiFunctionCall() {
+func ExampleCreateChatCompletion() {
 	req := &openai.ChatCompletionRequest{
 		APIKEY:      creds.OpenAIAPIKey,
 		Model:       openai.GPT3_5_turbo_4k_0613,
