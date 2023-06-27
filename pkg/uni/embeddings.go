@@ -60,6 +60,13 @@ func NewEmbedder(opts ...EmbedderOption) *Embedder {
 	return emb
 }
 
+func NewEmbedding() *Embedding {
+	return &Embedding{
+		byprovider32: map[string][]float32{},
+		byprovider64: map[string][]float64{},
+	}
+}
+
 func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Embedding, error) {
 	if m.err != nil {
 		return nil, m.err
@@ -320,6 +327,42 @@ func (emb *Embedding) SetByProvider32(provider providerIden, vector []float32) e
 		emb.byprovider32["openai"] = vector
 	case "cohere":
 		emb.byprovider64["cohere"] = Float32ToFloat64(vector)
+	}
+
+	return nil
+}
+
+func (emb *Embedding) Range(fn func(provider providerIden, vec []float64) error) error {
+	for pname, vec := range emb.byprovider32 {
+		err := fn(providerIden(pname), Float32ToFloat64(vec))
+		if err != nil {
+			return err
+		}
+	}
+
+	for pname, vec := range emb.byprovider64 {
+		err := fn(providerIden(pname), vec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (emb *Embedding) Range32(fn func(provider providerIden, vec []float32) error) error {
+	for pname, vec := range emb.byprovider32 {
+		err := fn(providerIden(pname), vec)
+		if err != nil {
+			return err
+		}
+	}
+
+	for pname, vec := range emb.byprovider64 {
+		err := fn(providerIden(pname), Float64ToFloat32(vec))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
