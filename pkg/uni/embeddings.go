@@ -2,6 +2,9 @@ package uni
 
 import (
 	"fmt"
+	"math"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
@@ -366,4 +369,101 @@ func (emb *Embedding) Range32(fn func(provider WithProviderOption, vec []float32
 	}
 
 	return nil
+}
+
+func (emb *Embedding) getprovidershash() string {
+	var providers []string
+
+	for p := range emb.byprovider32 {
+		providers = append(providers, p)
+	}
+
+	for p := range emb.byprovider64 {
+		providers = append(providers, p)
+	}
+
+	sort.Strings(providers)
+
+	return strings.Join(providers, "-")
+}
+
+// embeddings must all have the same providers
+func GetMinMaxConcatenatedEmbedding(embeddings []*Embedding) (*Embedding, error) {
+	ret := NewEmbedding()
+
+	if len(embeddings) == 0 {
+		return nil, fmt.Errorf("no embeddings provided")
+	}
+
+	var phash string
+	for i := 0; i < len(embeddings); i++ {
+		if phash == "" {
+			phash = embeddings[i].getprovidershash()
+		} else {
+			tmp := embeddings[i].getprovidershash()
+			if tmp != phash {
+				return nil, fmt.Errorf("All of the embeddings must have exactly the same providers")
+			}
+		}
+	}
+
+	for pname, p := range embeddings[0].byprovider32 {
+		d := len(p)
+		minVec := make([]float32, d)
+		maxVec := make([]float32, d)
+
+		for i := 0; i < d; i++ {
+			minVal := float32(math.MaxFloat32)
+			maxVal := float32(-math.MaxFloat32)
+
+			for _, emb := range embeddings {
+				if emb.byprovider32[pname][i] < minVal {
+					minVal = emb.byprovider32[pname][i]
+				}
+				if emb.byprovider32[pname][i] > maxVal {
+					maxVal = emb.byprovider32[pname][i]
+				}
+			}
+
+			minVec[i] = minVal
+			maxVec[i] = maxVal
+		}
+
+		concat := make([]float32, 0, len(minVec)+len(maxVec))
+		concat = append(concat, minVec...)
+		concat = append(concat, maxVec...)
+
+		ret.byprovider32[pname] = concat
+	}
+
+	for pname, p := range embeddings[0].byprovider64 {
+		d := len(p)
+		minVec := make([]float64, d)
+		maxVec := make([]float64, d)
+
+		for i := 0; i < d; i++ {
+			minVal := math.MaxFloat64
+			maxVal := -math.MaxFloat64
+
+			for _, emb := range embeddings {
+				if emb.byprovider64[pname][i] < minVal {
+					minVal = emb.byprovider64[pname][i]
+				}
+				if emb.byprovider64[pname][i] > maxVal {
+					maxVal = emb.byprovider64[pname][i]
+				}
+			}
+
+			minVec[i] = minVal
+			maxVec[i] = maxVal
+		}
+
+		concat := make([]float64, 0, len(minVec)+len(maxVec))
+		concat = append(concat, minVec...)
+		concat = append(concat, maxVec...)
+
+		ret.byprovider64[pname] = concat
+	}
+
+	return ret, nil
 }
