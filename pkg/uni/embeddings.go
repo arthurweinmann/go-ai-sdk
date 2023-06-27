@@ -76,17 +76,12 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 			switch t := opts[i].(type) {
 			default:
 				panic(fmt.Errorf("Should not happen: %T", t))
-			case providerIden32:
+			case providerIden:
 				switch t {
 				default:
 					panic(fmt.Errorf("Should not happen: %s", t))
 				case "openai":
 					useOpenAI = true
-				}
-			case providerIden64:
-				switch t {
-				default:
-					panic(fmt.Errorf("Should not happen: %s", t))
 				case "cohere":
 					useCohere = true
 				}
@@ -192,57 +187,63 @@ func (m *Embedder) Embed(text string, opts ...WithProviderOption) (*Embedding, e
 	return embs[0], nil
 }
 
-type WithFloat32ProviderOption interface {
-	WithFloat32ProviderOption()
-}
-
-func (em *Embedding) Get32(provider WithFloat32ProviderOption) ([]float32, error) {
-	switch t := provider.(type) {
+func (em *Embedding) GetByProvider(provider providerIden) ([]float64, error) {
+	switch provider {
 	default:
-		panic(fmt.Errorf("should not happen: %T", t))
-	case providerIden32:
-		switch t {
-		default:
-			panic(fmt.Errorf("should not happen: %s", t))
-		case "openai":
-			if len(em.byprovider32["openai"]) == 0 {
-				return nil, fmt.Errorf("This embedding does not contain provider openai")
-			}
-			return em.byprovider32["openai"], nil
+		panic(fmt.Errorf("should not happen: %s", provider))
+	case "openai":
+		if len(em.byprovider32["openai"]) == 0 {
+			return nil, fmt.Errorf("This embedding does not contain provider openai")
 		}
+		return Float32ToFloat64(em.byprovider32["openai"]), nil
+	case "cohere":
+		if len(em.byprovider64["cohere"]) == 0 {
+			return nil, fmt.Errorf("This embedding does not contain provider cohere")
+		}
+		return em.byprovider64["cohere"], nil
 	}
 }
 
-type WithFloat64ProviderOption interface {
-	WithFloat64ProviderOption()
+func (em *Embedding) GetByProvider32(provider providerIden) ([]float32, error) {
+	switch provider {
+	default:
+		panic(fmt.Errorf("should not happen: %s", provider))
+	case "openai":
+		if len(em.byprovider32["openai"]) == 0 {
+			return nil, fmt.Errorf("This embedding does not contain provider openai")
+		}
+		return em.byprovider32["openai"], nil
+	case "cohere":
+		if len(em.byprovider64["cohere"]) == 0 {
+			return nil, fmt.Errorf("This embedding does not contain provider cohere")
+		}
+		return Float64ToFloat32(em.byprovider64["cohere"]), nil
+	}
 }
 
-func (em *Embedding) Get64(provider WithFloat64ProviderOption) ([]float64, error) {
-	switch t := provider.(type) {
-	default:
-		panic(fmt.Errorf("should not happen: %T", t))
-	case providerIden64:
-		switch t {
-		default:
-			panic(fmt.Errorf("should not happen: %s", t))
-		case "cohere":
-			if len(em.byprovider64["cohere"]) == 0 {
-				return nil, fmt.Errorf("This embedding does not contain provider cohere")
-			}
-			return em.byprovider64["cohere"], nil
+func (em *Embedding) Get32() ([]float32, error) {
+	var ret []float32
+
+	if len(em.byprovider32)+len(em.byprovider64) > 1 {
+		return nil, fmt.Errorf("This embedding contains multiple ones for different providers, use the GetByProvider or GetByProvider32 methods instead")
+	}
+
+	if len(em.byprovider32) > 0 {
+		for _, p := range em.byprovider32 {
+			return p, nil
 		}
 	}
+
+	for _, p := range em.byprovider64 {
+		return Float64ToFloat32(p), nil
+	}
+
+	return ret, nil
 }
 
 func (em *Embedding) Get() ([]float64, error) {
-	var ret []float64
-
-	if len(em.byprovider32)+len(em.byprovider64) == 0 {
-		panic("should not happen")
-	}
-
 	if len(em.byprovider32)+len(em.byprovider64) > 1 {
-		return nil, fmt.Errorf("This embedding contains multiple ones for different providers, use the Get32 and Get64 methods instead")
+		return nil, fmt.Errorf("This embedding contains multiple ones for different providers, use the GetByProvider or GetByProvider32 methods instead")
 	}
 
 	if len(em.byprovider32) > 0 {
@@ -255,5 +256,71 @@ func (em *Embedding) Get() ([]float64, error) {
 		return p, nil
 	}
 
-	return ret, nil
+	panic("")
+}
+
+func (em *Embedding) Set(vector []float64) error {
+	if len(em.byprovider32)+len(em.byprovider64) > 1 {
+		return fmt.Errorf("This embedding contains multiple providers, use the SetByProvider or SetByProvider32 methods instead")
+	}
+
+	if len(em.byprovider32) > 0 {
+		for p := range em.byprovider32 {
+			em.byprovider32[p] = Float64ToFloat32(vector)
+			return nil
+		}
+	}
+
+	for p := range em.byprovider64 {
+		em.byprovider64[p] = vector
+		return nil
+	}
+
+	panic("")
+}
+
+func (em *Embedding) Set32(vector []float32) error {
+	if len(em.byprovider32)+len(em.byprovider64) > 1 {
+		return fmt.Errorf("This embedding contains multiple providers, use the SetByProvider or SetByProvider32 methods instead")
+	}
+
+	if len(em.byprovider32) > 0 {
+		for p := range em.byprovider32 {
+			em.byprovider32[p] = vector
+			return nil
+		}
+	}
+
+	for p := range em.byprovider64 {
+		em.byprovider64[p] = Float32ToFloat64(vector)
+		return nil
+	}
+
+	panic("")
+}
+
+func (emb *Embedding) SetByProvider(provider providerIden, vector []float64) error {
+	switch provider {
+	default:
+		panic(fmt.Errorf("should not happen: %s", provider))
+	case "openai":
+		emb.byprovider32["openai"] = Float64ToFloat32(vector)
+	case "cohere":
+		emb.byprovider64["cohere"] = vector
+	}
+
+	return nil
+}
+
+func (emb *Embedding) SetByProvider32(provider providerIden, vector []float32) error {
+	switch provider {
+	default:
+		panic(fmt.Errorf("should not happen: %s", provider))
+	case "openai":
+		emb.byprovider32["openai"] = vector
+	case "cohere":
+		emb.byprovider64["cohere"] = Float32ToFloat64(vector)
+	}
+
+	return nil
 }

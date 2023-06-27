@@ -42,22 +42,14 @@ type WithProviderOption interface {
 	WithProviderOption()
 }
 
-type providerIden32 string
+type providerIden string
 
-func (providerIden32) WithProviderOption() {}
+func (providerIden) WithProviderOption() {}
 
-func (providerIden32) WithFloat32ProviderOption() {}
-
-type providerIden64 string
-
-func (providerIden64) WithProviderOption() {}
-
-func (providerIden64) WithFloat64ProviderOption() {}
-
-func WithOpenAI() providerIden32 {
-	return providerIden32("openai")
+func WithOpenAI() providerIden {
+	return providerIden("openai")
 }
 
-func WithCohere() providerIden64 {
-	return providerIden64("cohere")
+func WithCohere() providerIden {
+	return providerIden("cohere")
 }
