@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/arthurweinmann/go-ai-sdk/pkg/cohere"
 	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
+	"github.com/arthurweinmann/go-ai-sdk/pkg/wcohere"
 )
 
 func TestSetup(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSetup(t *testing.T) {
 		panic(err)
 	}
 
-	err = cohere.InitDefaultClient(creds.CohereAPIKey)
+	err = wcohere.InitDefaultClient(creds.CohereAPIKey)
 	if err != nil {
 		panic(err)
 	}

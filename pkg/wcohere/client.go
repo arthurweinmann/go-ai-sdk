@@ -1,4 +1,4 @@
-package cohere
+package wcohere
 
 import "github.com/cohere-ai/cohere-go"
 

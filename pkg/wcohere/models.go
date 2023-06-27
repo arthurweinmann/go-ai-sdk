@@ -1,4 +1,4 @@
-package cohere
+package wcohere
 
 // Command models
 const (
