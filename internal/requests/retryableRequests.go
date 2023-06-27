@@ -17,11 +17,11 @@ type RequestRetrier struct {
 	maxRetries    int
 	backoffFactor int
 
-	requestswaiting   []*Request
+	requestswaiting   []*RetryableRequest
 	requestswaitingMu *sync.Mutex
 }
 
-type Request struct {
+type RetryableRequest struct {
 	Method   string
 	URL      string
 	Body     any
@@ -29,7 +29,7 @@ type Request struct {
 	Headers  http.Header
 
 	HTTPTimeout  time.Duration
-	ParseErrBody func(body []byte, err error, statusCode int, r *Request) error
+	ParseErrBody func(body []byte, err error, statusCode int, r *RetryableRequest) error
 	IsErrorFatal func(error) bool
 
 	errCh     chan error
@@ -62,7 +62,7 @@ func (rr *RequestRetrier) Run() {
 		for {
 			time.Sleep(rr.initialDelay)
 
-			var reqtodo []*Request
+			var reqtodo []*RetryableRequest
 
 			now := time.Now().Unix()
 
@@ -113,7 +113,7 @@ func (rr *RequestRetrier) Run() {
 	}()
 }
 
-func (rr *RequestRetrier) Request(r *Request) error {
+func (rr *RequestRetrier) Request(r *RetryableRequest) error {
 	err := rr.requestnowait(r)
 	if err != nil {
 		if r.IsErrorFatal(err) {
@@ -136,7 +136,7 @@ func (rr *RequestRetrier) Request(r *Request) error {
 	return nil
 }
 
-func (rr *RequestRetrier) requestnowait(r *Request) error {
+func (rr *RequestRetrier) requestnowait(r *RetryableRequest) error {
 	var err error
 
 	var jsbody []byte
@@ -167,9 +167,6 @@ func (rr *RequestRetrier) requestnowait(r *Request) error {
 		req.Header.Set("Content-Length", strconv.Itoa(len(jsbody)))
 	}
 
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "github.com/arthurweinmann/go-ai-sdk")
-
 	for hname, hs := range r.Headers {
 		for i := 0; i < len(hs); i++ {
 			if i == 0 {
@@ -178,6 +175,12 @@ func (rr *RequestRetrier) requestnowait(r *Request) error {
 				req.Header.Add(hname, hs[i])
 			}
 		}
+	}
+
+	req.Header.Set("Accept", "application/json")
+
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", "github.com/arthurweinmann/go-ai-sdk")
 	}
 
 	resp, err := (&http.Client{

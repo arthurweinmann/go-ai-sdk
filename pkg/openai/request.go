@@ -41,7 +41,7 @@ func request(method, path string, body, response any, apikey string) error {
 
 	url := baseurl.ResolveReference(&url.URL{Path: path}).String()
 
-	return retryrequester.Request(&requests.Request{
+	return retryrequester.Request(&requests.RetryableRequest{
 		URL:         url,
 		Method:      method,
 		Body:        body,
@@ -50,7 +50,7 @@ func request(method, path string, body, response any, apikey string) error {
 		Headers: http.Header{
 			"Authorization": []string{fmt.Sprintf("Bearer %s", apikey)},
 		},
-		ParseErrBody: func(b []byte, err error, statusCode int, r *requests.Request) error {
+		ParseErrBody: func(b []byte, err error, statusCode int, r *requests.RetryableRequest) error {
 			var errRes ErrorResponse
 			if len(b) > 0 {
 				err = json.Unmarshal(b, &errRes)

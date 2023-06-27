@@ -7,12 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/arthurweinmann/go-ai-sdk/pkg/cohere"
 	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 )
-
-var creds = &struct {
-	OpenAIAPIKey string `json:"OPENAI_API_KEY,omitempty"`
-}{}
 
 func TestSetup(t *testing.T) {
 	wd, err := os.Getwd()
@@ -25,7 +22,22 @@ func TestSetup(t *testing.T) {
 		panic(fmt.Errorf("%v (you may need to run `go test -v` in the directory of the test file to enable it to find the credentials.json file with your openai api key)", err))
 	}
 
+	creds := &struct {
+		OpenAIAPIKey string `json:"OPENAI_API_KEY,omitempty"`
+		CohereAPIKey string `json:"COHERE_API_KEY,omitempty"`
+	}{}
+
 	err = json.Unmarshal(b, creds)
+	if err != nil {
+		panic(err)
+	}
+
+	err = openai.Init(creds.OpenAIAPIKey)
+	if err != nil {
+		panic(err)
+	}
+
+	err = cohere.InitDefaultClient(creds.CohereAPIKey)
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +45,6 @@ func TestSetup(t *testing.T) {
 
 func ExampleCreateChatCompletion() {
 	req := &openai.ChatCompletionRequest{
-		APIKEY:      creds.OpenAIAPIKey,
 		Model:       openai.GPT3_5_turbo_4k_0613,
 		Temperature: 0.7,
 		Functions: []openai.ChatCompletionFunction{{

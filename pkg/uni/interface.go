@@ -1,13 +1,14 @@
 package uni
 
-type Model interface{}
+type Provider interface{}
 
-type Universal interface {
-	// SetPrompt enables you to use different prompts for different models
-	SetPrompt(Model, string)
+type Universal struct {
+	promptsPerModel map[string]string
 }
 
-type ChatMessage interface{}
+type ChatMessage interface {
+	GetContent() string
+}
 
 type Chat interface {
 	AddMessage(ChatMessage) error
