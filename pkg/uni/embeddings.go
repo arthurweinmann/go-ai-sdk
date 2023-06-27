@@ -332,7 +332,7 @@ func (emb *Embedding) SetByProvider32(provider providerIden, vector []float32) e
 	return nil
 }
 
-func (emb *Embedding) Range(fn func(provider providerIden, vec []float64) error) error {
+func (emb *Embedding) Range(fn func(provider WithProviderOption, vec []float64) error) error {
 	for pname, vec := range emb.byprovider32 {
 		err := fn(providerIden(pname), Float32ToFloat64(vec))
 		if err != nil {
@@ -350,7 +350,7 @@ func (emb *Embedding) Range(fn func(provider providerIden, vec []float64) error)
 	return nil
 }
 
-func (emb *Embedding) Range32(fn func(provider providerIden, vec []float32) error) error {
+func (emb *Embedding) Range32(fn func(provider WithProviderOption, vec []float32) error) error {
 	for pname, vec := range emb.byprovider32 {
 		err := fn(providerIden(pname), vec)
 		if err != nil {
