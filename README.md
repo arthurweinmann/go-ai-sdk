@@ -108,7 +108,7 @@ embedder := uni.NewSingleProviderEmbedder(openaiOption)
 
 #### Embed
 
-This method of `Embedder` and `SingleProviderEmbedder` creates an embedding from a text. You can optionally pass a `WithProviderOption` to it to specify which provider to use.
+This method of `Embedder` and `SingleProviderEmbedder` creates an embedding from a text.
 
 ```go
 text := "text to embed"
