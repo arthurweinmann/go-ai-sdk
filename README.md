@@ -10,6 +10,7 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
    * [Current Status](#current-status)
    * [Documentation](#documentation)
    * [How to use](#how-to-use)
+      * [Universal Interface](#universal-interface)
       * [OpenAI](#openai)
       * [Google Natural Language API](#google-natural-language-api)
       * [Wikipedia (Wikimedia)](#wikipedia)
@@ -43,6 +44,138 @@ You may explore directories, for example the OpenAI one:
 # How to use
 
 Import this golang module with `go get -u github.com/arthurweinmann/go-ai-sdk`.
+
+## Universal Interface
+
+Import the universal interfaces package into your code:
+
+```go
+import (
+	"github.com/arthurweinmann/go-ai-sdk/pkg/uni"
+)
+```
+
+### Embeddings
+
+We currently support OpenAI and Cohere for embeddings.
+
+The package provides several types that you can use:
+
+- `Embedder` and `SingleProviderEmbedder`: These types allow you to create embeddings from texts using multiple or a single provider, respectively.
+- `Embedding` and `SingleProviderEmbedding`: These types represent an embedding created by the embedders. They contain the actual vector of the embedding and also the provider used to create them.
+
+#### WithOpenAIEmbed
+
+This function returns an `EmbedderOption` that you can use to initialize an `Embedder` or `SingleProviderEmbedder` that uses OpenAI to create embeddings.
+
+```go
+model := "openai model"
+apikey := "openai api key"
+option := uni.WithOpenAIEmbed(model, apikey)
+```
+
+#### WithCohereEmbed
+
+This function works like `WithOpenAIEmbed`, but uses Cohere to create embeddings.
+
+```go
+model := "cohere model"
+truncate := "truncate option"
+apikey := "cohere api key"
+option := uni.WithCohereEmbed(model, truncate, apikey)
+```
+
+#### NewEmbedder
+
+This function initializes an `Embedder` that you can use to create embeddings. You need to pass at least one `EmbedderOption` to it.
+
+```go
+openaiOption := uni.WithOpenAIEmbed("openai model", "openai api key")
+cohereOption := uni.WithCohereEmbed("cohere model", "truncate option", "cohere api key")
+embedder := uni.NewEmbedder(openaiOption, cohereOption)
+```
+
+#### NewSingleProviderEmbedder
+
+This function works like `NewEmbedder`, but initializes a `SingleProviderEmbedder`. You can only pass one `EmbedderOption` to it.
+
+```go
+openaiOption := uni.WithOpenAIEmbed("openai model", "openai api key")
+embedder := uni.NewSingleProviderEmbedder(openaiOption)
+```
+
+#### Embed
+
+This method of `Embedder` and `SingleProviderEmbedder` creates an embedding from a text. You can optionally pass a `WithProviderOption` to it to specify which provider to use.
+
+```go
+text := "text to embed"
+embedding, err := embedder.Embed(text)
+```
+
+#### BatchEmbed
+
+This method works like `Embed`, but allows you to create embeddings from multiple texts at once.
+
+```go
+texts := []string{"text 1 to embed", "text 2 to embed"}
+embeddings, err := embedder.BatchEmbed(texts)
+```
+
+#### GetByProvider
+
+This method of `Embedding` allows you to get the vector of an embedding for a specific provider.
+
+```go
+provider := "openai"
+vector, err := embedding.GetByProvider(provider)
+```
+
+#### Get32 and Get
+
+These methods of `SingleProviderEmbedding` allow you to get the vector of an embedding as a `[]float32` or `[]float64`, respectively.
+
+```go
+vector32 := embedding.Get32()
+vector64 := embedding.Get()
+```
+
+#### Set and Set32
+
+These methods of `SingleProviderEmbedding` allow you to set the vector of an embedding as a `[]float64` or `[]float32`, respectively.
+
+```go
+vector64 := []float64{0.1, 0.2, 0.3}
+embedding.Set(vector64)
+```
+
+#### SetByProvider and SetByProvider32
+
+These methods of `Embedding` allow you to set the vector of an embedding for a specific provider.
+
+```go
+provider := "openai"
+vector64 := []float64{0.1, 0.2, 0.3}
+embedding.SetByProvider(provider, vector64)
+```
+
+#### GetMinMaxConcatenatedEmbedding
+
+This function allows you to get a single embedding from multiple embeddings by concatenating their minimum and maximum values.
+
+```go
+embeddings := []*uni.Embedding{embedding1, embedding2}
+result, err := uni.GetMinMaxConcatenatedEmbedding(embeddings)
+```
+
+#### GetMinMaxConcatenatedSingleProviderEmbedding
+
+This function works like `GetMinMaxConcatenatedEmbedding`, but operates on `SingleProviderEmbedding`s.
+
+```go
+embeddings := []*uni.SingleProviderEmbedding{embedding1, embedding2}
+result, err := uni.GetMinMaxConcatenatedSingleProviderEmbedding(embeddings)
+```
 
 ## OpenAI
 
