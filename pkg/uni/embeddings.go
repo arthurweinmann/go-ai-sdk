@@ -266,69 +266,80 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 	var mu sync.Mutex
 
 	for _, prov := range m.providers {
-		switch t := prov.(type) {
-		default:
-			panic(fmt.Errorf("Should not happen: %T", t))
-		case *withOpenAIOption:
-			if useOpenAI {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					resp, err := openai.CreateEmbedding(&openai.EmbeddingRequest{
-						APIKEY: t.APIKey,
-						Model:  t.Model,
-						Input:  texts,
-					})
-					mu.Lock()
-					defer mu.Unlock()
-					if err != nil {
-						errs = append(errs, fmt.Errorf("OpenAI: %v", err))
-						return
-					}
-					for i := 0; i < len(resp.Data); i++ {
-						ret[resp.Data[i].Index].byprovider32["openai"] = resp.Data[i].Embedding
-					}
-				}()
+
+		for k := 0; k < len(texts); k += 50 {
+			l := k + 50
+			var tmpbatch []string
+			if l < len(texts) {
+				tmpbatch = texts[k:l]
+			} else {
+				tmpbatch = texts[k:]
 			}
-		case *withCohereOption:
-			if useCohere {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					var client *cohere.Client
-					if t.APIKey != "" {
-						var err error
-						client, err = cohere.CreateClient(t.APIKey)
+
+			switch t := prov.(type) {
+			default:
+				panic(fmt.Errorf("Should not happen: %T", t))
+			case *withOpenAIOption:
+				if useOpenAI {
+					wg.Add(1)
+					go func(kindex int, batch []string) {
+						defer wg.Done()
+						resp, err := openai.CreateEmbedding(&openai.EmbeddingRequest{
+							APIKEY: t.APIKey,
+							Model:  t.Model,
+							Input:  batch,
+						})
+						mu.Lock()
+						defer mu.Unlock()
 						if err != nil {
-							mu.Lock()
-							defer mu.Unlock()
+							errs = append(errs, fmt.Errorf("OpenAI: %v", err))
+							return
+						}
+						for i := 0; i < len(resp.Data); i++ {
+							ret[kindex+resp.Data[i].Index].byprovider32["openai"] = resp.Data[i].Embedding
+						}
+					}(k, tmpbatch)
+				}
+			case *withCohereOption:
+				if useCohere {
+					wg.Add(1)
+					go func(kindex int, batch []string) {
+						defer wg.Done()
+						var client *cohere.Client
+						if t.APIKey != "" {
+							var err error
+							client, err = cohere.CreateClient(t.APIKey)
+							if err != nil {
+								mu.Lock()
+								defer mu.Unlock()
+								errs = append(errs, fmt.Errorf("Cohere: %v", err))
+								return
+							}
+						} else {
+							client = wcohere.DefaultClient
+							if client == nil {
+								mu.Lock()
+								defer mu.Unlock()
+								errs = append(errs, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized"))
+								return
+							}
+						}
+						resp, err := client.Embed(cohere.EmbedOptions{
+							Model:    t.Model,
+							Truncate: t.Truncate,
+							Texts:    batch,
+						})
+						mu.Lock()
+						defer mu.Unlock()
+						if err != nil {
 							errs = append(errs, fmt.Errorf("Cohere: %v", err))
 							return
 						}
-					} else {
-						client = wcohere.DefaultClient
-						if client == nil {
-							mu.Lock()
-							defer mu.Unlock()
-							errs = append(errs, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized"))
-							return
+						for i := 0; i < len(resp.Embeddings); i++ {
+							ret[kindex+i].byprovider64["cohere"] = resp.Embeddings[i]
 						}
-					}
-					resp, err := client.Embed(cohere.EmbedOptions{
-						Model:    t.Model,
-						Truncate: t.Truncate,
-						Texts:    texts,
-					})
-					mu.Lock()
-					defer mu.Unlock()
-					if err != nil {
-						errs = append(errs, fmt.Errorf("Cohere: %v", err))
-						return
-					}
-					for i := 0; i < len(resp.Embeddings); i++ {
-						ret[i].byprovider64["cohere"] = resp.Embeddings[i]
-					}
-				}()
+					}(k, tmpbatch)
+				}
 			}
 		}
 	}
@@ -348,45 +359,55 @@ func (m *SingleProviderEmbedder) BatchEmbed(texts []string, opts ...WithProvider
 		ret[i] = &SingleProviderEmbedding{}
 	}
 
-	switch t := m.opt.(type) {
-	default:
-		panic(fmt.Errorf("Should not happen: %T", t))
-	case *withOpenAIOption:
-		resp, err := openai.CreateEmbedding(&openai.EmbeddingRequest{
-			APIKEY: t.APIKey,
-			Model:  t.Model,
-			Input:  texts,
-		})
-		if err != nil {
-			return nil, err
+	for k := 0; k < len(texts); k += 50 {
+		l := k + 50
+		var tmpbatch []string
+		if l < len(texts) {
+			tmpbatch = texts[k:l]
+		} else {
+			tmpbatch = texts[k:]
 		}
-		for i := 0; i < len(resp.Data); i++ {
-			ret[resp.Data[i].Index].v32 = resp.Data[i].Embedding
-		}
-	case *withCohereOption:
-		var client *cohere.Client
-		if t.APIKey != "" {
-			var err error
-			client, err = cohere.CreateClient(t.APIKey)
+
+		switch t := m.opt.(type) {
+		default:
+			panic(fmt.Errorf("Should not happen: %T", t))
+		case *withOpenAIOption:
+			resp, err := openai.CreateEmbedding(&openai.EmbeddingRequest{
+				APIKEY: t.APIKey,
+				Model:  t.Model,
+				Input:  tmpbatch,
+			})
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			client = wcohere.DefaultClient
-			if client == nil {
-				return nil, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized")
+			for i := 0; i < len(resp.Data); i++ {
+				ret[k+resp.Data[i].Index].v32 = resp.Data[i].Embedding
 			}
-		}
-		resp, err := client.Embed(cohere.EmbedOptions{
-			Model:    t.Model,
-			Truncate: t.Truncate,
-			Texts:    texts,
-		})
-		if err != nil {
-			return nil, err
-		}
-		for i := 0; i < len(resp.Embeddings); i++ {
-			ret[i].v64 = resp.Embeddings[i]
+		case *withCohereOption:
+			var client *cohere.Client
+			if t.APIKey != "" {
+				var err error
+				client, err = cohere.CreateClient(t.APIKey)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				client = wcohere.DefaultClient
+				if client == nil {
+					return nil, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized")
+				}
+			}
+			resp, err := client.Embed(cohere.EmbedOptions{
+				Model:    t.Model,
+				Truncate: t.Truncate,
+				Texts:    tmpbatch,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for i := 0; i < len(resp.Embeddings); i++ {
+				ret[k+i].v64 = resp.Embeddings[i]
+			}
 		}
 	}
 
