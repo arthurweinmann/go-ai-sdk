@@ -17,9 +17,19 @@ type Embedder struct {
 	providers []EmbedderOption
 }
 
+type SingleProviderEmbedder struct {
+	err error
+	opt EmbedderOption
+}
+
 type Embedding struct {
 	byprovider32 map[string][]float32
 	byprovider64 map[string][]float64
+}
+
+type SingleProviderEmbedding struct {
+	v32 []float32
+	v64 []float64
 }
 
 type EmbedderOption interface {
@@ -63,11 +73,49 @@ func NewEmbedder(opts ...EmbedderOption) *Embedder {
 	return emb
 }
 
+func NewSingleProviderEmbedder(opts ...EmbedderOption) *SingleProviderEmbedder {
+	emb := &SingleProviderEmbedder{}
+
+	if len(opts) == 0 {
+		emb.err = fmt.Errorf("We need one provider of embeddings")
+		return emb
+	}
+
+	var providerset bool
+
+	for i := 0; i < len(opts); i++ {
+		switch t := opts[i].(type) {
+		default:
+			panic(fmt.Errorf("Should not happen: %T", t))
+		case *withOpenAIOption:
+			emb.opt = t
+			if providerset {
+				emb.err = fmt.Errorf("We support only one provider of embeddings for a SingleProviderEmbedder")
+				return emb
+			}
+			providerset = true
+		case *withCohereOption:
+			emb.opt = t
+			if providerset {
+				emb.err = fmt.Errorf("We support only one provider of embeddings for a SingleProviderEmbedder")
+				return emb
+			}
+			providerset = true
+		}
+	}
+
+	return emb
+}
+
 func NewEmbedding() *Embedding {
 	return &Embedding{
 		byprovider32: map[string][]float32{},
 		byprovider64: map[string][]float64{},
 	}
+}
+
+func NewSingleProviderEmbedding() *SingleProviderEmbedding {
+	return &SingleProviderEmbedding{}
 }
 
 func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Embedding, error) {
@@ -184,7 +232,75 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 	return ret, nil
 }
 
+func (m *SingleProviderEmbedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*SingleProviderEmbedding, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	ret := make([]*SingleProviderEmbedding, len(texts))
+	for i := 0; i < len(ret); i++ {
+		ret[i] = &SingleProviderEmbedding{}
+	}
+
+	switch t := m.opt.(type) {
+	default:
+		panic(fmt.Errorf("Should not happen: %T", t))
+	case *withOpenAIOption:
+		resp, err := openai.CreateEmbedding(&openai.EmbeddingRequest{
+			APIKEY: t.APIKey,
+			Model:  t.Model,
+			Input:  texts,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < len(resp.Data); i++ {
+			ret[resp.Data[i].Index].v32 = resp.Data[i].Embedding
+		}
+	case *withCohereOption:
+		var client *cohere.Client
+		if t.APIKey != "" {
+			var err error
+			client, err = cohere.CreateClient(t.APIKey)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			client = wcohere.DefaultClient
+			if client == nil {
+				return nil, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized")
+			}
+		}
+		resp, err := client.Embed(cohere.EmbedOptions{
+			Model:    t.Model,
+			Truncate: t.Truncate,
+			Texts:    texts,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < len(resp.Embeddings); i++ {
+			ret[i].v64 = resp.Embeddings[i]
+		}
+	}
+
+	return ret, nil
+}
+
 func (m *Embedder) Embed(text string, opts ...WithProviderOption) (*Embedding, error) {
+	embs, err := m.BatchEmbed([]string{text}, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(embs) != 1 {
+		return nil, fmt.Errorf("We caught an internal inconsistency in our code, please report it")
+	}
+
+	return embs[0], nil
+}
+
+func (m *SingleProviderEmbedder) Embed(text string, opts ...WithProviderOption) (*SingleProviderEmbedding, error) {
 	embs, err := m.BatchEmbed([]string{text}, opts...)
 	if err != nil {
 		return nil, err
@@ -231,82 +347,30 @@ func (em *Embedding) GetByProvider32(provider providerIden) ([]float32, error) {
 	}
 }
 
-func (em *Embedding) Get32() ([]float32, error) {
-	var ret []float32
-
-	if len(em.byprovider32)+len(em.byprovider64) > 1 {
-		return nil, fmt.Errorf("This embedding contains multiple ones for different providers, use the GetByProvider or GetByProvider32 methods instead")
+func (em *SingleProviderEmbedding) Get32() []float32 {
+	if len(em.v32) > 0 {
+		return em.v32
 	}
 
-	if len(em.byprovider32) > 0 {
-		for _, p := range em.byprovider32 {
-			return p, nil
-		}
-	}
-
-	for _, p := range em.byprovider64 {
-		return Float64ToFloat32(p), nil
-	}
-
-	return ret, nil
+	return Float64ToFloat32(em.v64)
 }
 
-func (em *Embedding) Get() ([]float64, error) {
-	if len(em.byprovider32)+len(em.byprovider64) > 1 {
-		return nil, fmt.Errorf("This embedding contains multiple ones for different providers, use the GetByProvider or GetByProvider32 methods instead")
+func (em *SingleProviderEmbedding) Get() []float64 {
+	if len(em.v64) > 0 {
+		return em.v64
 	}
 
-	if len(em.byprovider32) > 0 {
-		for _, p := range em.byprovider32 {
-			return Float32ToFloat64(p), nil
-		}
-	}
-
-	for _, p := range em.byprovider64 {
-		return p, nil
-	}
-
-	panic("")
+	return Float32ToFloat64(em.v32)
 }
 
-func (em *Embedding) Set(vector []float64) error {
-	if len(em.byprovider32)+len(em.byprovider64) > 1 {
-		return fmt.Errorf("This embedding contains multiple providers, use the SetByProvider or SetByProvider32 methods instead")
-	}
-
-	if len(em.byprovider32) > 0 {
-		for p := range em.byprovider32 {
-			em.byprovider32[p] = Float64ToFloat32(vector)
-			return nil
-		}
-	}
-
-	for p := range em.byprovider64 {
-		em.byprovider64[p] = vector
-		return nil
-	}
-
-	panic("")
+func (em *SingleProviderEmbedding) Set(vector []float64) {
+	em.v64 = vector
+	em.v32 = nil
 }
 
-func (em *Embedding) Set32(vector []float32) error {
-	if len(em.byprovider32)+len(em.byprovider64) > 1 {
-		return fmt.Errorf("This embedding contains multiple providers, use the SetByProvider or SetByProvider32 methods instead")
-	}
-
-	if len(em.byprovider32) > 0 {
-		for p := range em.byprovider32 {
-			em.byprovider32[p] = vector
-			return nil
-		}
-	}
-
-	for p := range em.byprovider64 {
-		em.byprovider64[p] = Float32ToFloat64(vector)
-		return nil
-	}
-
-	panic("")
+func (em *SingleProviderEmbedding) Set32(vector []float32) {
+	em.v32 = vector
+	em.v64 = nil
 }
 
 func (emb *Embedding) SetByProvider(provider providerIden, vector []float64) error {
@@ -463,6 +527,121 @@ func GetMinMaxConcatenatedEmbedding(embeddings []*Embedding) (*Embedding, error)
 		concat = append(concat, maxVec...)
 
 		ret.byprovider64[pname] = concat
+	}
+
+	return ret, nil
+}
+
+// embeddings' vectors must all have the same length
+func GetMinMaxConcatenatedSingleProviderEmbedding(embeddings []*SingleProviderEmbedding) (*SingleProviderEmbedding, error) {
+	ret := NewSingleProviderEmbedding()
+
+	if len(embeddings) == 0 {
+		return nil, fmt.Errorf("no embeddings provided")
+	}
+
+	var count32, count64 int
+	for _, emb := range embeddings {
+		if len(emb.v32) > 0 {
+			count32++
+		}
+		if len(emb.v64) > 0 {
+			count64++
+		}
+	}
+
+	var d int
+
+	if len(embeddings[0].v32) > 0 {
+		d = len(embeddings[0].v32)
+	} else {
+		d = len(embeddings[0].v64)
+	}
+
+	if count32 > count64 {
+		minVec := make([]float32, d)
+		maxVec := make([]float32, d)
+
+		for i := 0; i < d; i++ {
+			minVal := float32(math.MaxFloat32)
+			maxVal := float32(-math.MaxFloat32)
+
+			for _, emb := range embeddings {
+				if len(emb.v32) > 0 {
+					if len(emb.v32) != d {
+						return nil, fmt.Errorf("We need all the vectors from all the embeddings to be of the same length")
+					}
+					if emb.v32[i] < minVal {
+						minVal = emb.v32[i]
+					}
+					if emb.v32[i] > maxVal {
+						maxVal = emb.v32[i]
+					}
+				} else {
+					if len(emb.v64) != d {
+						return nil, fmt.Errorf("We need all the vectors from all the embeddings to be of the same length")
+					}
+					if float32(emb.v64[i]) < minVal {
+						minVal = float32(emb.v64[i])
+					}
+					if float32(emb.v64[i]) > maxVal {
+						maxVal = float32(emb.v64[i])
+					}
+				}
+			}
+
+			minVec[i] = minVal
+			maxVec[i] = maxVal
+		}
+
+		concat := make([]float32, 0, len(minVec)+len(maxVec))
+		concat = append(concat, minVec...)
+		concat = append(concat, maxVec...)
+
+		ret.v32 = concat
+		ret.v64 = nil
+	} else {
+		minVec := make([]float64, d)
+		maxVec := make([]float64, d)
+
+		for i := 0; i < d; i++ {
+			minVal := float64(math.MaxFloat64)
+			maxVal := float64(-math.MaxFloat64)
+
+			for _, emb := range embeddings {
+				if len(emb.v64) > 0 {
+					if len(emb.v64) != d {
+						return nil, fmt.Errorf("We need all the vectors from all the embeddings to be of the same length")
+					}
+					if emb.v64[i] < minVal {
+						minVal = emb.v64[i]
+					}
+					if emb.v64[i] > maxVal {
+						maxVal = emb.v64[i]
+					}
+				} else {
+					if len(emb.v32) != d {
+						return nil, fmt.Errorf("We need all the vectors from all the embeddings to be of the same length")
+					}
+					if float64(emb.v32[i]) < minVal {
+						minVal = float64(emb.v32[i])
+					}
+					if float64(emb.v32[i]) > maxVal {
+						maxVal = float64(emb.v32[i])
+					}
+				}
+			}
+
+			minVec[i] = minVal
+			maxVec[i] = maxVal
+		}
+
+		concat := make([]float64, 0, len(minVec)+len(maxVec))
+		concat = append(concat, minVec...)
+		concat = append(concat, maxVec...)
+
+		ret.v32 = nil
+		ret.v64 = concat
 	}
 
 	return ret, nil
