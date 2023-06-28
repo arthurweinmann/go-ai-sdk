@@ -114,8 +114,114 @@ func NewEmbedding() *Embedding {
 	}
 }
 
+func EmbeddingFrom(provider WithProviderOption, vector []float64) *Embedding {
+	emb := NewEmbedding()
+
+	switch t := provider.(type) {
+	default:
+		panic(fmt.Errorf("Should not happen: %T", t))
+	case providerIden:
+		switch t {
+		default:
+			panic(fmt.Errorf("Should not happen: %s", t))
+		case "openai":
+			emb.byprovider32["openai"] = Float64ToFloat32(vector)
+		case "cohere":
+			emb.byprovider64["cohere"] = vector
+		}
+	}
+
+	return emb
+}
+
+func EmbeddingFrom32(provider WithProviderOption, vector []float32) *Embedding {
+	emb := NewEmbedding()
+
+	switch t := provider.(type) {
+	default:
+		panic(fmt.Errorf("Should not happen: %T", t))
+	case providerIden:
+		switch t {
+		default:
+			panic(fmt.Errorf("Should not happen: %s", t))
+		case "openai":
+			emb.byprovider32["openai"] = vector
+		case "cohere":
+			emb.byprovider64["cohere"] = Float32ToFloat64(vector)
+		}
+	}
+
+	return emb
+}
+
+func (emb *Embedding) ToSingleProvider() (*SingleProviderEmbedding, error) {
+	if len(emb.byprovider32)+len(emb.byprovider64) > 1 {
+		return nil, fmt.Errorf("We cannot convert an Embedding with multiple vectors for multiple providers to a SingleProviderEmbedding")
+	}
+
+	s := NewSingleProviderEmbedding()
+
+	for _, v := range emb.byprovider32 {
+		s.v32 = v
+		s.v64 = nil
+		break
+	}
+
+	for _, v := range emb.byprovider64 {
+		s.v32 = nil
+		s.v64 = v
+		break
+	}
+
+	return s, nil
+}
+
 func NewSingleProviderEmbedding() *SingleProviderEmbedding {
 	return &SingleProviderEmbedding{}
+}
+
+func SingleProviderEmbeddingFrom(v []float64) *SingleProviderEmbedding {
+	s := NewSingleProviderEmbedding()
+
+	s.v64 = v
+
+	return s
+}
+
+func SingleProviderEmbeddingFrom32(v []float32) *SingleProviderEmbedding {
+	s := NewSingleProviderEmbedding()
+
+	s.v32 = v
+
+	return s
+}
+
+func (s *SingleProviderEmbedding) ToEmbedding(provider WithProviderOption) *Embedding {
+	t, ok := provider.(providerIden)
+	if !ok {
+		panic(fmt.Errorf("Should not happen: %T", provider))
+	}
+
+	ret := NewEmbedding()
+
+	switch t {
+	default:
+		panic(fmt.Errorf("Should not happen: %s", t))
+	case "openai":
+		if len(s.v32) > 0 {
+			ret.byprovider32["openai"] = s.v32
+		} else {
+			ret.byprovider32["openai"] = Float64ToFloat32(s.v64)
+		}
+	case "cohere":
+		if len(s.v32) > 0 {
+			ret.byprovider64["cohere"] = Float32ToFloat64(s.v32)
+		} else {
+			ret.byprovider64["cohere"] = s.v64
+		}
+	}
+
+	return ret
 }
 
 func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Embedding, error) {
