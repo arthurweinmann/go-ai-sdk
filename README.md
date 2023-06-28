@@ -31,6 +31,8 @@ Currently, we support:
 
     - Wikipedia (Wikimedia) Knowledge API
 
+	- Cohere, with a wrapper of the official sdk and some additional methods, for example to get the price of a request
+
 # Documentation
 
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/arthurweinmann/go-ai-sdk)
