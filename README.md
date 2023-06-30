@@ -25,15 +25,17 @@ This project is currently in a robust phase of active development. Kindly stay c
 
 Currently, we support:
 
+    - Universal embeddings interface.
+
     - OpenAI, and the implementation of its APIs remains under development.
 
-	- Cohere, with a wrapper of the official sdk and some additional methods, for example to get the price of a request
+    - Cohere, with a wrapper of the official sdk and some additional methods, for example to get the price of a request.
 
     - Google Cloud Natural Language APIs, also under development.
 
-    - Wikipedia (Wikimedia) Knowledge API
+    - Wikipedia (Wikimedia) Knowledge API.
 
-	- Hacker News API
+    - Hacker News API.
 
 # Documentation
 
