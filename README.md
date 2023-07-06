@@ -13,9 +13,11 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
       * [Universal Interface](#universal-interface)
       * [OpenAI](#openai)
       * [Google Natural Language API](#google-natural-language-api)
+	  * [Hacker News](#hacker-news)
       * [Wikipedia (Wikimedia)](#wikipedia)
    * [Request Retry feature](#request-retry-feature)
       * [Note on OpenAI Retries](#note-on-openai-retries)
+   * [Contact](#contact)
    * [License](#license)
 <!--te-->
 
@@ -448,6 +450,90 @@ func main() {
 }
 ```
 
+## Hacker News
+
+First, import the package into your Go code:
+
+```go
+import "github.com/arthurweinmann/go-ai-sdk/pkg/hackernews"
+```
+
+### User
+
+To retrieve a user by id, use the GetUser function.
+
+```go 
+user, err := hackernews.GetUser("jl")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("User ID: %s\n", user.Id)
+fmt.Printf("User Karma: %d\n", user.Karma)
+```
+
+### Item
+
+Items are either a story, a comment, a poll, a job, or a part of a poll. To retrieve an item by id, use the GetItem function.
+
+```go
+item, err := hackernews.GetItem(123)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Item ID: %d\n", item.ID)
+fmt.Printf("Item type: %s\n", item.Type)
+```
+
+### Stories
+
+This package provides functions to retrieve specific types of stories by their ids.
+
+Here is how you can retrieve top stories:
+
+```go
+topStories, err := hackernews.GetTopStories()
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Top story IDs: %v\n", topStories)
+```
+
+Replace GetTopStories with GetNewStories, GetBestStories, GetJobStories, GetAskStories, or GetShowStories to retrieve other types of stories.
+
+### Items in Batches
+
+To iterate through items in batches, use the IterateItemsByBatch function. You provide a batch size and a callback function that gets called with each batch of items.
+
+Here is an example where we print the IDs of each item in batches of 10:
+
+```go
+err := hackernews.IterateItemsByBatch(10, func(items []*hackernews.Item) (bool, error) {
+    for _, item := range items {
+        fmt.Println(item.ID)
+    }
+    return true, nil
+})
+
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+In the callback function, returning false as the first argument stops the iteration.
+
+### Updates
+
+The GetUpdates function retrieves the updates from HackerNews API.
+
+```go
+updates, err := hackernews.GetUpdates()
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Updated items: %v\n", updates.Items)
+fmt.Printf("Updated profiles: %v\n", updates.Profiles)
+```
+
 ## Wikipedia
 
 Here is a simple example of how you might use this sdk to query Wikipedia for a specific topic and get the related information. In this case, we are interested in "Artificial Intelligence".
@@ -532,6 +618,10 @@ The delay keeps increasing until the request succeeds or until it reaches the ma
 The OpenAI API can be unpredictable. At times, it throws 500 error messages even for valid requests. Therefore, we retry any error-producing request. This is beyond the usual practice of retrying just the 429 rate limit errors. 
 
 Also, there's insufficient documentation at the moment on how to count tokens for the new function calls feature. Due to this, we handle context length overflow errors differently. We parse those errors and automatically adjust the MaxTokens parameter for following attempts. This ensures that operations run smoothly.
+
+# Contact
+
+If you have any issues or feature requests, please open an issue on the [GitHub repository](https://github.com/arthurweinmann/go-ai-sdk/issues).
 
 # License
 
