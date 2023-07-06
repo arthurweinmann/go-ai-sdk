@@ -490,7 +490,6 @@ switch item.Type {
 	case hackernews.PollType:
 	case hackernews.PollOptType:
 }
-}
 ```
 
 ### Stories
@@ -508,6 +507,55 @@ fmt.Printf("Top story IDs: %v\n", topStories)
 ```
 
 Replace GetTopStories with GetNewStories, GetBestStories, GetJobStories, GetAskStories, or GetShowStories to retrieve other types of stories.
+
+### Full Stories (with comments)
+
+A FullStory is a struct containing a story item and all its comments.
+
+```go
+type FullStory struct {
+	Story    *Item   `json:"story"`
+	Comments []*Item `json:"comments"`
+}
+```
+
+Here's an example of how to use FetchFullStory to get a story along with its comments from Hacker News:
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/arthurweinmann/go-ai-sdk/pkg/hackernews"
+)
+
+func main() {
+	// Let's assume we already have a story item
+	story := &hackernews.Item{
+		ID:    12345,
+		Type:  hackernews.StoryType,
+		Title: "Interesting Story",
+		Kids:  []int{67890, 23456}, // These are comment IDs
+		// other fields...
+	}
+
+	fullStory, err := hackernews.FetchFullStory(story)
+	if err != nil {
+		fmt.Printf("Error fetching full story: %v", err)
+		return
+	}
+
+	// Print the story
+	fmt.Printf("Story: %s\n", fullStory.Story.Title)
+
+	// Print the comments
+	for _, comment := range fullStory.Comments {
+		fmt.Printf("Comment by %s: %s\n", comment.By, comment.Text)
+	}
+}
+```
+
+The comments are in the order of their appearance, meaning that chains of recursive comments with comment parents will be in the order of the branches they form.
 
 ### Items in Batches
 
