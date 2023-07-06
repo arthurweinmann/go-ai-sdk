@@ -482,6 +482,15 @@ if err != nil {
 }
 fmt.Printf("Item ID: %d\n", item.ID)
 fmt.Printf("Item type: %s\n", item.Type)
+
+switch item.Type {
+	case hackernews.JobType:
+	case hackernews.StoryType:
+	case hackernews.CommentType:
+	case hackernews.PollType:
+	case hackernews.PollOptType:
+}
+}
 ```
 
 ### Stories

@@ -8,12 +8,22 @@ import (
 	"time"
 )
 
+type ItemType string
+
+const (
+	JobType     ItemType = "job"
+	StoryType   ItemType = "story"
+	CommentType ItemType = "comment"
+	PollType    ItemType = "poll"
+	PollOptType ItemType = "pollopt"
+)
+
 const itemBaseURL = "https://hacker-news.firebaseio.com/v0/item/"
 
 type Item struct {
 	ID          int      `json:"id"`                    // The item's unique id.
 	Deleted     bool     `json:"deleted,omitempty"`     // true if the item is deleted.
-	Type        string   `json:"type"`                  // The type of item. One of "job", "story", "comment", "poll", or "pollopt".
+	Type        ItemType `json:"type"`                  // The type of item. One of "job", "story", "comment", "poll", or "pollopt".
 	By          string   `json:"by,omitempty"`          // The username of the item's author.
 	Time        UnixTime `json:"time"`                  // Creation date of the item, in Unix Time.
 	Text        string   `json:"text,omitempty"`        // The comment, story or poll text. HTML.
