@@ -135,8 +135,7 @@ embeddings, err := embedder.BatchEmbed(texts)
 This method of `Embedding` allows you to get the vector of an embedding for a specific provider.
 
 ```go
-provider := "openai"
-vector, err := embedding.GetByProvider(provider)
+vector, err := embedding.GetByProvider(uni.WithOpenAI())
 ```
 
 #### Get32 and Get
@@ -162,9 +161,8 @@ embedding.Set(vector64)
 These methods of `Embedding` allow you to set the vector of an embedding for a specific provider.
 
 ```go
-provider := "openai"
 vector64 := []float64{0.1, 0.2, 0.3}
-embedding.SetByProvider(provider, vector64)
+embedding.SetByProvider(uni.WithCohere(), vector64)
 ```
 
 #### GetMinMaxConcatenatedEmbedding
