@@ -5,6 +5,10 @@ type Model string
 const (
 	Text_Embedding_Ada_2_8k Model = "text-embedding-ada-002"
 
+	GPT4_128k_preview Model = "gpt-4-1106-preview"
+
+	GPT4_128k_vision_preview Model = "gpt-4-vision-preview"
+
 	GPT4_8k Model = "gpt-4"
 
 	GPT4_8k_0613 Model = "gpt-4-0613"
