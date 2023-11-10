@@ -43,56 +43,68 @@ func TestSetup(t *testing.T) {
 	}
 }
 
-func ExampleCreateChatCompletion() {
+func TestCreateChatCompletion(t *testing.T) {
 	req := &openai.ChatCompletionRequest{
-		Model:       openai.GPT3_5_turbo_4k_0613,
+		Model:       openai.GPT4_128k_Preview,
 		Temperature: 0.7,
-		Functions: []openai.ChatCompletionFunction{{
-			Name:        "get_current_weather",
-			Description: "Get the current weather",
-			Parameters: &openai.FunctionParameters{
-				Type:     "object",
-				Required: []string{"location", "format"},
-				Properties: map[string]openai.FunctionProperty{
-					"location": {
-						Type:        "string",
-						Description: "The city and state, e.g. San Francisco, CA",
-					},
-					"format": {
-						Type:        "string",
-						Description: "The temperature unit to use. Infer this from the users location.",
-						Enum:        []string{"celsius", "fahrenheit"},
+		Tools: []openai.ChatCompletionToolCall{
+			{
+				Type: "function",
+				Function: &openai.ChatCompletionFunction{
+					Name:        "get_current_weather",
+					Description: "Get the current weather",
+					Parameters: &openai.FunctionParameters{
+						Type:     "object",
+						Required: []string{"location", "format"},
+						Properties: map[string]openai.FunctionProperty{
+							"location": {
+								Type:        "string",
+								Description: "The city and state, e.g. San Francisco, CA",
+							},
+							"format": {
+								Type:        "string",
+								Description: "The temperature unit to use. Infer this from the users location.",
+								Enum:        []string{"celsius", "fahrenheit"},
+							},
+						},
 					},
 				},
 			},
-		}},
+		},
 		Messages: []openai.ChatCompletionMessage{{
 			Role:    "user",
 			Content: "what is the weather like today",
 		}},
 	}
+
 	resp, err := openai.CreateChatCompletion(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Fatal("Error:", err)
 		return
 	}
 
-	fmt.Println(resp.Choices[0].Message.Role)
+	if resp.Choices[0].Message.Role != "assistant" {
+		t.Fatalf("we got an unexpected response message role: %s", resp.Choices[0].Message.Role)
+	}
 
+	// Append the response message and a new user message to the request
 	req.Messages = append(req.Messages, resp.Choices[0].Message)
 	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
 		Role:    "user",
 		Content: "I'm in Glasgow, Scotland",
 	})
+
+	// Make another request with the updated messages
 	resp, err = openai.CreateChatCompletion(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Fatal("Error:", err)
 		return
 	}
 
-	fmt.Println(resp.Choices[0].Message.Role, resp.Choices[0].Message.FunctionCall.(map[string]any)["name"])
-
-	// Output:
-	// assistant
-	// assistant get_current_weather
+	if len(resp.Choices[0].Message.ToolCalls) == 0 {
+		t.Fatal("unexpected response")
+	}
+	if resp.Choices[0].Message.ToolCalls[0].Function.Name != "get_current_weather" {
+		t.Fatal("unexpected response")
+	}
 }

@@ -12,46 +12,34 @@ const (
 	System    MessageRole = "system"
 	User      MessageRole = "user"
 	Assistant MessageRole = "assistant"
-	Function  MessageRole = "function"
+	Tool      MessageRole = "tool"
+	// Note: The 'Function' role is deprecated
 )
 
-type ChatCompletionMessage struct {
-	Role MessageRole `json:"role"`
-
-	// The contents of the message. content is required for all messages except assistant messages with function calls.
-	Content string `json:"content"`
-
-	// The name of the author of this message. name is required if role is function,
-	// and it should be the name of the function whose response is in the content.
-	// May contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
-	Name string `json:"name,omitempty"`
-
-	// Controls how the model responds to function calls.
-	// "none" means the model does not call a function, and responds to the end-user.
-	// "auto" means the model can pick between an end-user or calling a function.
-	// Specifying a particular function via {"name":\ "my_function"} forces the model to call that function.
-	// "none" is the default when no functions are present. "auto" is the default if functions are present.
-	/* Example:
-	FunctionCall: (map[string]interface {}) (len=2) {
-	   (string) (len=4) "name": (string) (len=19) "get_current_weather",
-	   (string) (len=9) "arguments": (string) (len=60) "{\n  \"format\": \"celsius\",\n  \"location\": \"Glasgow, Scotland\"\n}"
-	}
-	*/
-	FunctionCall any `json:"function_call,omitempty"` // string or map
+type ContentPart struct {
+	Type string `json:"type"`           // "text" or "image_url"
+	Text string `json:"text,omitempty"` // for text type
+	// For image_url type
+	URL    string `json:"url,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }
 
-// Under the hood, functions are injected into the system message in a syntax the model has been trained on.
-// This means functions count against the model's context limit and are billed as input tokens.
-// If running into context limits, we suggest limiting the number of functions or the length of documentation you provide for function parameters.
-type ChatCompletionFunction struct {
-	// The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
-	Name string `json:"name,omitempty"`
+type ChatCompletionMessage struct {
+	Role      MessageRole `json:"role"`
+	Content   interface{} `json:"content"` // string, []ContentPart, or null
+	ToolCalls []*ToolCall `json:"tool_calls,omitempty"`
+	// Deprecated: Name, FunctionCall
+}
 
-	// The description of what the function does.
-	Description string `json:"description,omitempty"`
+type ToolCall struct {
+	ID       string    `json:"id"`
+	Type     string    `json:"type"` // Currently, only "function" is supported
+	Function *Function `json:"function"`
+}
 
-	// The parameters the functions accepts, described as a JSON Schema object.
-	Parameters *FunctionParameters `json:"parameters,omitempty"`
+type Function struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"` // JSON format, validation needed
 }
 
 type FunctionParameters struct {
@@ -64,34 +52,37 @@ type FunctionProperty struct {
 	Type        string   `json:"type"` // string, number, integer, array, boolean, object, null, anyof
 	Description string   `json:"description,omitempty"`
 	Enum        []string `json:"enum,omitempty"`
-
-	// Only if Type == "array"
+	// For arrays
 	Items *FunctionProperty `json:"items,omitempty"`
-
-	// Only if Type == "object"
-	Required []string `json:"required,omitempty"`
+	// For objects
+	Properties map[string]FunctionProperty `json:"properties,omitempty"`
+	Required   []string                    `json:"required,omitempty"`
 }
 
-// ChatCompletionRequest represents a request structure for chat completion API.
+type ChatCompletionToolCall struct {
+	Type     string                  `json:"type"` // Currently, only "function" is supported
+	Function *ChatCompletionFunction `json:"function"`
+}
+
+type ChatCompletionFunction struct {
+	Name        string              `json:"name,omitempty"`
+	Description string              `json:"description,omitempty"`
+	Parameters  *FunctionParameters `json:"parameters,omitempty"`
+}
+
+type ResponseFormat struct {
+	Type string `json:"type"` // "text" or "json_object"
+}
+
 type ChatCompletionRequest struct {
-	// Only required if no default api key was initialized
-	APIKEY string `json:"-"`
-
-	Model Model `json:"model"`
-
-	Messages  []ChatCompletionMessage  `json:"messages"`
-	Functions []ChatCompletionFunction `json:"functions,omitempty"`
-
-	// Set to -1 to let the function automatically compute the maximum number of remaining token in the context
-	// window size of the selected model
-	// The function returns an error if there are not enough token left for the provided messages and functions
-	//
-	// Set to -2 to let the function switch between similar models with different maximum context length depending
-	// on the token length of the request (for example going automatically from GPT3_5_turbo_4k to GPT3_5_turbo_16k).
-	// In this mode, it will set the MaxTokens parameter to the maximum remaining ones.
-	//
-	// Set to -3 for a similar switching behaviour as -2 but leaves MaxTokens for the default value to apply
-	MaxTokens int `json:"max_tokens,omitempty"`
+	APIKEY         string                   `json:"-"`
+	Model          Model                    `json:"model"`
+	Messages       []ChatCompletionMessage  `json:"messages"`
+	Tools          []ChatCompletionToolCall `json:"tools,omitempty"`
+	ResponseFormat *ResponseFormat          `json:"response_format,omitempty"`
+	Seed           *int                     `json:"seed,omitempty"`
+	ToolChoice     interface{}              `json:"tool_choice,omitempty"` // string or object
+	MaxTokens      int                      `json:"max_tokens,omitempty"`
 
 	Temperature      float32        `json:"temperature,omitempty"`
 	TopP             float32        `json:"top_p,omitempty"`
@@ -112,12 +103,14 @@ type ChatCompletionChoice struct {
 
 // ChatCompletionResponse represents a response structure for chat completion API.
 type ChatCompletionResponse struct {
-	ID      string                 `json:"id"`
-	Object  string                 `json:"object"`
-	Created int64                  `json:"created"`
-	Model   string                 `json:"model"`
-	Choices []ChatCompletionChoice `json:"choices"`
-	Usage   Usage                  `json:"usage"`
+	ID                string                 `json:"id"`
+	Choices           []ChatCompletionChoice `json:"choices"`
+	FinishReason      string                 `json:"finish_reason"`
+	Created           int64                  `json:"created"`
+	Model             string                 `json:"model"`
+	SystemFingerprint string                 `json:"system_fingerprint"`
+	Object            string                 `json:"object"`
+	Usage             Usage                  `json:"usage"`
 
 	Price float64 `json:"price,omitempty"`
 }

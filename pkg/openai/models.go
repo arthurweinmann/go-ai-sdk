@@ -5,9 +5,9 @@ type Model string
 const (
 	Text_Embedding_Ada_2_8k Model = "text-embedding-ada-002"
 
-	GPT4_128k_preview Model = "gpt-4-1106-preview"
+	GPT4_128k_Preview Model = "gpt-4-1106-preview"
 
-	GPT4_128k_vision_preview Model = "gpt-4-vision-preview"
+	GPT4_128k_Vision_Preview Model = "gpt-4-vision-preview"
 
 	GPT4_8k Model = "gpt-4"
 
@@ -39,10 +39,11 @@ const (
 type ContextLength int
 
 const (
-	Context4K  ContextLength = 4096
-	Context8K  ContextLength = 8192
-	Context16K ContextLength = 16384
-	Context32K ContextLength = 32768
+	Context4K   ContextLength = 4096
+	Context8K   ContextLength = 8192
+	Context16K  ContextLength = 16384
+	Context32K  ContextLength = 32768
+	Context128K ContextLength = 128000
 )
 
 func (m Model) GetContextLength() ContextLength {
@@ -55,6 +56,8 @@ func (m Model) GetContextLength() ContextLength {
 		return Context8K
 	case GPT4_32k, GPT4_32k_0613:
 		return Context32K
+	case GPT4_128k_Preview, GPT4_128k_Vision_Preview:
+		return Context128K
 	case GPT3_5_turbo_4k, GPT3_5_turbo_4k_0613, GPT3_5_turbo_4k_0301:
 		return Context4K
 	case GPT3_5_turbo_16k, GPT3_5_turbo_16k_0613:
@@ -77,7 +80,7 @@ func (m Model) GetSimilarWithNextContextLength() (bool, Model) {
 	case GPT4_8k_0613:
 		return true, GPT4_32k_0613
 	case GPT4_32k, GPT4_32k_0613:
-		return false, ""
+		return true, GPT4_128k_Preview
 	case GPT3_5_turbo_4k:
 		return true, GPT3_5_turbo_16k
 	case GPT3_5_turbo_4k_0301:
