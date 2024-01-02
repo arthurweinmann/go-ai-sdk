@@ -141,10 +141,15 @@ func (rr *RequestRetrier) requestnowait(r *RetryableRequest) error {
 
 	var jsbody []byte
 	if r.Body != nil {
-		switch r.Body.(type) {
+		switch t := r.Body.(type) {
 		case nil:
+		case io.Reader:
+			jsbody, err = io.ReadAll(t)
+			if err != nil && err != io.EOF {
+				return err
+			}
 		default:
-			jsbody, err = json.Marshal(r.Body)
+			jsbody, err = json.Marshal(t)
 			if err != nil {
 				return err
 			}
