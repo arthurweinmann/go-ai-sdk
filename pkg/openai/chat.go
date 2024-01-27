@@ -75,7 +75,9 @@ type ResponseFormat struct {
 }
 
 type ChatCompletionRequest struct {
-	APIKEY         string                   `json:"-"`
+	APIKEY     string `json:"-"`
+	MaxRetries int    `json:"-"`
+
 	Model          Model                    `json:"model"`
 	Messages       []ChatCompletionMessage  `json:"messages"`
 	Tools          []ChatCompletionToolCall `json:"tools,omitempty"`
@@ -161,7 +163,7 @@ func CreateChatCompletion(req *ChatCompletionRequest) (*ChatCompletionResponse, 
 		}
 	}
 
-	err = request("POST", urlSuffix_chatcompletion, req, resp, req.APIKEY)
+	err = request("POST", urlSuffix_chatcompletion, req, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}

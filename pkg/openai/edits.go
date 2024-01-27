@@ -9,7 +9,8 @@ const urlSuffix_edits = "v1/edits"
 // EditsRequest represents a request structure for Edits API.
 type EditsRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"-"`
+	APIKEY     string `json:"-"`
+	MaxRetries int    `json:"-"`
 
 	Model       Model   `json:"model,omitempty"`
 	Input       string  `json:"input,omitempty"`
@@ -44,7 +45,7 @@ func CreateEdit(req *EditsRequest) (*EditsResponse, error) {
 		return nil, fmt.Errorf("unknown model: %s", req.Model)
 	}
 
-	err := request("POST", urlSuffix_edits, req, resp, req.APIKEY)
+	err := request("POST", urlSuffix_edits, req, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}

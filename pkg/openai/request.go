@@ -30,7 +30,7 @@ func init() {
 	retryrequester.Run()
 }
 
-func request(method, path string, body, response any, apikey string) error {
+func request(method, path string, body, response any, apikey string, customMaxRetries int) error {
 	if apikey == "" && defaultAPIKey == "" {
 		return fmt.Errorf("we do not have an openai api key defined as default or provided for this request")
 	}
@@ -42,11 +42,12 @@ func request(method, path string, body, response any, apikey string) error {
 	url := baseurl.ResolveReference(&url.URL{Path: path}).String()
 
 	return retryrequester.Request(&requests.RetryableRequest{
-		URL:         url,
-		Method:      method,
-		Body:        body,
-		Response:    response,
-		HTTPTimeout: 300 * time.Second,
+		URL:              url,
+		Method:           method,
+		Body:             body,
+		CustomMaxRetries: int64(customMaxRetries),
+		Response:         response,
+		HTTPTimeout:      300 * time.Second,
 		Headers: http.Header{
 			"Authorization": []string{fmt.Sprintf("Bearer %s", apikey)},
 		},

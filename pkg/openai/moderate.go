@@ -8,7 +8,8 @@ var urlSuffix_moderate = "v1/moderations"
 
 type ModerateRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"-"`
+	APIKEY     string `json:"-"`
+	MaxRetries int    `json:"-"`
 
 	Input string `json:"input"`
 }
@@ -30,7 +31,7 @@ func Moderate(req *ModerateRequest) (*ModerateResponse, error) {
 
 	resp := &ModerateResponse{}
 
-	err := request("POST", urlSuffix_moderate, req, resp, req.APIKEY)
+	err := request("POST", urlSuffix_moderate, req, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}

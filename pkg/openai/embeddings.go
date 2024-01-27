@@ -8,7 +8,8 @@ const urlSuffix_embeddings = "v1/embeddings"
 
 type EmbeddingRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"-"`
+	APIKEY     string `json:"-"`
+	MaxRetries int    `json:"-"`
 
 	Model Model `json:"model"`
 
@@ -46,7 +47,7 @@ func CreateEmbedding(req *EmbeddingRequest) (*EmbeddingResponse, error) {
 		return nil, fmt.Errorf("unknown model: %s", req.Model)
 	}
 
-	err := request("POST", urlSuffix_embeddings, req, resp, req.APIKEY)
+	err := request("POST", urlSuffix_embeddings, req, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}

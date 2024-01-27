@@ -4,7 +4,8 @@ const urlSuffix_listmodels = "v1/models"
 
 type ListModelsRequest struct {
 	// Only required if no default api key was initialized
-	APIKEY string `json:"-"`
+	APIKEY     string `json:"-"`
+	MaxRetries int    `json:"-"`
 }
 
 type ListModelsObject struct {
@@ -38,7 +39,7 @@ type ListModelsResponse struct {
 func ListModels(req *ListModelsRequest) (*ListModelsResponse, error) {
 	resp := &ListModelsResponse{}
 
-	err := request("GET", urlSuffix_listmodels, nil, resp, req.APIKEY)
+	err := request("GET", urlSuffix_listmodels, nil, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}

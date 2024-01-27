@@ -11,6 +11,8 @@ type CompletionRequest struct {
 	// Only required if no default api key was initialized
 	APIKEY string `json:"-"`
 
+	MaxRetries int `json:"-"`
+
 	Model Model `json:"model"`
 
 	// The prompt(s) to generate completions for, encoded as a string, array of strings, array of tokens, or array of token arrays.
@@ -69,7 +71,7 @@ func CreateCompletion(req *CompletionRequest) (*CompletionResponse, error) {
 		return nil, fmt.Errorf("unknown model: %s", req.Model)
 	}
 
-	err := request("POST", urlSuffix_completion, req, resp, req.APIKEY)
+	err := request("POST", urlSuffix_completion, req, resp, req.APIKEY, req.MaxRetries)
 	if err != nil {
 		return nil, err
 	}
