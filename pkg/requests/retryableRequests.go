@@ -32,9 +32,11 @@ type RetryableRequest struct {
 	ParseErrBody func(body []byte, err error, statusCode int, r *RetryableRequest) error
 	IsErrorFatal func(error) bool
 
-	errCh     chan error
-	retryTime int64
-	newDelay  time.Duration
+	errCh            chan error
+	retryTime        int64
+	retryCount       int64
+	CustomMaxRetries int64
+	newDelay         time.Duration
 }
 
 func NewRequestRetrier(initialDelay time.Duration, maxRetries, backoffFactor int) *RequestRetrier {
@@ -95,7 +97,8 @@ func (rr *RequestRetrier) Run() {
 				r := reqtodo[i]
 				err := rr.requestnowait(r)
 				if err != nil {
-					if r.IsErrorFatal(err) {
+					if r.IsErrorFatal(err) || (r.CustomMaxRetries == 0 && r.retryCount >= int64(rr.maxRetries)) ||
+						(r.CustomMaxRetries > 0 && r.retryCount >= int64(r.CustomMaxRetries)) {
 						r.errCh <- err
 						time.Sleep(10*time.Second + time.Duration(rand.Intn(10)))
 						continue
@@ -137,6 +140,9 @@ func (rr *RequestRetrier) Request(r *RetryableRequest) error {
 }
 
 func (rr *RequestRetrier) requestnowait(r *RetryableRequest) error {
+	defer func() {
+		r.retryCount++
+	}()
 	var err error
 
 	var jsbody []byte
