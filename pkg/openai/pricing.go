@@ -23,6 +23,8 @@ var PricingPer1000TokensPerModel = map[Model][]float64{
 	TextDavinci_1_Edit: {0.02, 0.02},
 	CodeDavinci2_8k:    {0.02, 0.02},
 
+	Embedding_V3_1536:       {0.00002, 0.00002},
+	Embedding_V3_3072:       {0.00013, 0.00013},
 	Text_Embedding_Ada_2_8k: {0.0001, 0.0001},
 }
 

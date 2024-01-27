@@ -5,6 +5,10 @@ type Model string
 const (
 	Text_Embedding_Ada_2_8k Model = "text-embedding-ada-002"
 
+	Embedding_V3_3072 Model = "text-embedding-3-large"
+
+	Embedding_V3_1536 Model = "text-embedding-3-small"
+
 	GPT4_128k_Preview Model = "gpt-4-0125-preview"
 
 	GPT4_128k_Vision_Preview Model = "gpt-4-vision-preview"
@@ -77,7 +81,7 @@ func (m Model) GetSimilarWithNextContextLength() (bool, Model) {
 	switch m {
 	default:
 		panic("Model does not exist")
-	case Text_Embedding_Ada_2_8k:
+	case Text_Embedding_Ada_2_8k, Embedding_V3_1536, Embedding_V3_3072:
 		return false, ""
 	case GPT4_8k:
 		return true, GPT4_32k
