@@ -17,6 +17,9 @@ type EmbeddingRequest struct {
 	// Each input must not exceed 8192 tokens in length.
 	Input interface{} `json:"input"`
 
+	// Only supported in text-embedding-3 and later models
+	Dimensions int `json:"dimensions"`
+
 	User string `json:"user,omitempty"`
 }
 
