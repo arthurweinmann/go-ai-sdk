@@ -5,7 +5,7 @@ type Model string
 const (
 	Text_Embedding_Ada_2_8k Model = "text-embedding-ada-002"
 
-	GPT4_128k_Preview Model = "gpt-4-1106-preview"
+	GPT4_128k_Preview Model = "gpt-4-0125-preview"
 
 	GPT4_128k_Vision_Preview Model = "gpt-4-vision-preview"
 
@@ -34,6 +34,10 @@ const (
 	TextDavinci_1_Edit Model = "text-davinci-edit-001"
 
 	CodeDavinci2_8k Model = "code-davinci-002"
+
+	DallE3 Model = "dall-e-3"
+
+	DallE2 Model = "dall-e-2"
 )
 
 type ContextLength int
@@ -49,7 +53,7 @@ const (
 func (m Model) GetContextLength() ContextLength {
 	switch m {
 	default:
-		panic("Model does not exist")
+		panic("Model does not exist or the context length does not apply to it (example: DallE)")
 	case Text_Embedding_Ada_2_8k:
 		return Context8K
 	case GPT4_8k, GPT4_8k_0613:
