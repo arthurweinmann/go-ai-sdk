@@ -25,6 +25,8 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
 
 This project is currently in a robust phase of active development. Kindly stay connected for further updates and advancements.
 
+The APIs are unstable and will change in the future.
+
 Currently, we support:
 
     - Universal embeddings interface.
