@@ -45,8 +45,11 @@ Currently, we support:
 # How to contribute
 
 You can contribute to this project in multiple ways:
+
 	- By using it and giving feedback (through the issues board on github)
+ 
 	- By opening a pull request to add a feature in scope or refactor an existing universal api
+ 
 	- By sponsoring this project
 
 # Documentation
