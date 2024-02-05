@@ -8,6 +8,7 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
 
 <!--ts-->
    * [Current Status](#current-status)
+   * [Current Status](#how-to-contribute)
    * [Documentation](#documentation)
    * [How to use](#how-to-use)
       * [Universal Interface](#universal-interface)
@@ -40,6 +41,13 @@ Currently, we support:
     - Wikipedia (Wikimedia) Knowledge API.
 
     - Hacker News API.
+
+# How to contribute
+
+You can contribute to this project in multiple ways:
+	- By using it and giving feedback (through the issues board on github)
+	- By opening a pull request to add a feature in scope or refactor an existing universal api
+	- By sponsoring this project
 
 # Documentation
 
@@ -92,7 +100,7 @@ This function works like `WithOpenAIEmbed`, but uses Cohere to create embeddings
 model := "cohere model"
 truncate := "truncate option"
 apikey := "cohere api key"
-option := uni.WithCohereEmbed(model, truncate, apikey)
+option := uni.WithCohereEmbed(model, truncateOption, inputType, apikey)
 ```
 
 #### NewEmbedder
@@ -101,7 +109,7 @@ This function initializes an `Embedder` that you can use to create embeddings. Y
 
 ```go
 openaiOption := uni.WithOpenAIEmbed("openai model", "openai api key")
-cohereOption := uni.WithCohereEmbed("cohere model", "truncate option", "cohere api key")
+cohereOption := uni.WithCohereEmbed("cohere model", "none", "search_document", "cohere api key")
 embedder := uni.NewEmbedder(openaiOption, cohereOption)
 ```
 

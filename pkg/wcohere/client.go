@@ -1,7 +1,9 @@
 package wcohere
 
-import "github.com/cohere-ai/cohere-go"
+import (
+	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
+)
 
-func NewClient(apikey string) (*cohere.Client, error) {
-	return cohere.CreateClient(apikey)
+func NewClient(apikey string) (*cohereclient.Client, error) {
+	return cohereclient.NewClient(cohereclient.WithToken(apikey)), nil
 }

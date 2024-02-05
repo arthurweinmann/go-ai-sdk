@@ -34,6 +34,8 @@ type withCohereOption struct {
 	APIKey   string
 	Model    string
 	Truncate string
+
+	InputType string
 }
 
 func (*withCohereOption) EmbedderOption() {}

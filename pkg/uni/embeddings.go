@@ -1,6 +1,7 @@
 package uni
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"sort"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/arthurweinmann/go-ai-sdk/pkg/openai"
 	"github.com/arthurweinmann/go-ai-sdk/pkg/wcohere"
-	"github.com/cohere-ai/cohere-go"
+	api "github.com/cohere-ai/cohere-go/v2"
+	cohere "github.com/cohere-ai/cohere-go/v2"
+	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 )
 
 type Embedder struct {
@@ -43,11 +46,12 @@ func WithOpenAIEmbed(model openai.Model, apikeyOptional string) *withOpenAIOptio
 	}
 }
 
-func WithCohereEmbed(model, truncate, apikeyOptional string) *withCohereOption {
+func WithCohereEmbed(model, truncate, inputType, apikeyOptional string) *withCohereOption {
 	return &withCohereOption{
-		APIKey:   apikeyOptional,
-		Model:    model,
-		Truncate: truncate,
+		APIKey:    apikeyOptional,
+		Model:     model,
+		Truncate:  truncate,
+		InputType: inputType,
 	}
 }
 
@@ -305,10 +309,10 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 					wg.Add(1)
 					go func(kindex int, batch []string) {
 						defer wg.Done()
-						var client *cohere.Client
+						var client *cohereclient.Client
 						if t.APIKey != "" {
 							var err error
-							client, err = cohere.CreateClient(t.APIKey)
+							client, err = wcohere.NewClient(t.APIKey)
 							if err != nil {
 								mu.Lock()
 								defer mu.Unlock()
@@ -324,19 +328,27 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 								return
 							}
 						}
-						resp, err := client.Embed(cohere.EmbedOptions{
-							Model:    t.Model,
-							Truncate: t.Truncate,
-							Texts:    batch,
-						})
+						params := &cohere.EmbedRequest{
+							Model: &t.Model,
+							Texts: batch,
+						}
+						truncateOpt := cohere.EmbedRequestTruncate(t.Truncate)
+						if truncateOpt != "" {
+							params.Truncate = &truncateOpt
+						}
+						inputTypeOpt := api.EmbedInputType(t.InputType)
+						if inputTypeOpt != "" {
+							params.InputType = &inputTypeOpt
+						}
+						resp, err := client.Embed(context.Background(), params)
 						mu.Lock()
 						defer mu.Unlock()
 						if err != nil {
 							errs = append(errs, fmt.Errorf("Cohere: %v", err))
 							return
 						}
-						for i := 0; i < len(resp.Embeddings); i++ {
-							ret[kindex+i].byprovider64["cohere"] = resp.Embeddings[i]
+						for i := 0; i < len(resp.EmbeddingsFloats.Embeddings); i++ {
+							ret[kindex+i].byprovider64["cohere"] = resp.EmbeddingsFloats.Embeddings[i]
 						}
 					}(k, tmpbatch)
 				}
@@ -384,10 +396,10 @@ func (m *SingleProviderEmbedder) BatchEmbed(texts []string, opts ...WithProvider
 				ret[k+resp.Data[i].Index].v32 = resp.Data[i].Embedding
 			}
 		case *withCohereOption:
-			var client *cohere.Client
+			var client *cohereclient.Client
 			if t.APIKey != "" {
 				var err error
-				client, err = cohere.CreateClient(t.APIKey)
+				client, err = wcohere.NewClient(t.APIKey)
 				if err != nil {
 					return nil, err
 				}
@@ -397,16 +409,24 @@ func (m *SingleProviderEmbedder) BatchEmbed(texts []string, opts ...WithProvider
 					return nil, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized")
 				}
 			}
-			resp, err := client.Embed(cohere.EmbedOptions{
-				Model:    t.Model,
-				Truncate: t.Truncate,
-				Texts:    tmpbatch,
-			})
+			params := &cohere.EmbedRequest{
+				Model: &t.Model,
+				Texts: tmpbatch,
+			}
+			truncateOpt := cohere.EmbedRequestTruncate(t.Truncate)
+			if truncateOpt != "" {
+				params.Truncate = &truncateOpt
+			}
+			inputTypeOpt := api.EmbedInputType(t.InputType)
+			if inputTypeOpt != "" {
+				params.InputType = &inputTypeOpt
+			}
+			resp, err := client.Embed(context.Background(), params)
 			if err != nil {
 				return nil, err
 			}
-			for i := 0; i < len(resp.Embeddings); i++ {
-				ret[k+i].v64 = resp.Embeddings[i]
+			for i := 0; i < len(resp.EmbeddingsFloats.Embeddings); i++ {
+				ret[k+i].v64 = resp.EmbeddingsFloats.Embeddings[i]
 			}
 		}
 	}

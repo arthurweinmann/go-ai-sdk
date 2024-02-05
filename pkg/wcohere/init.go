@@ -1,17 +1,13 @@
 package wcohere
 
 import (
-	"github.com/cohere-ai/cohere-go"
+	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 )
 
-var DefaultClient *cohere.Client
+var DefaultClient *cohereclient.Client
 
 func InitDefaultClient(defaultApiKey string) error {
-	var err error
-	DefaultClient, err = cohere.CreateClient(defaultApiKey)
-	if err != nil {
-		return err
-	}
+	DefaultClient = cohereclient.NewClient(cohereclient.WithToken(defaultApiKey))
 
 	return nil
 }
