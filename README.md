@@ -8,7 +8,7 @@ A comprehensive collection of Golang SDKs for various AI and Knowledge APIs. Use
 
 <!--ts-->
    * [Current Status](#current-status)
-   * [Current Status](#how-to-contribute)
+   * [How to contribute](#how-to-contribute)
    * [Documentation](#documentation)
    * [How to use](#how-to-use)
       * [Universal Interface](#universal-interface)
