@@ -26,6 +26,8 @@ type SingleProviderEmbedder struct {
 }
 
 type Embedding struct {
+	errByProvider map[string]error
+
 	byprovider32 map[string][]float32
 	byprovider64 map[string][]float64
 }
@@ -115,6 +117,29 @@ func NewEmbedding() *Embedding {
 	return &Embedding{
 		byprovider32: map[string][]float32{},
 		byprovider64: map[string][]float64{},
+	}
+}
+
+func (emb *Embedding) FirstError() error {
+	for pname, e := range emb.errByProvider {
+		if e != nil {
+			return fmt.Errorf("%s: %v", pname, e)
+		}
+	}
+	return nil
+}
+
+func (emb *Embedding) ByProviderError(provider WithProviderOption) error {
+	switch t := provider.(type) {
+	default:
+		panic(fmt.Errorf("Should not happen: %T", t))
+	case providerIden:
+		switch t {
+		default:
+			panic(fmt.Errorf("Should not happen: %s", t))
+		case "openai", "cohere":
+			return emb.errByProvider[string(t)]
+		}
 	}
 }
 
@@ -260,13 +285,13 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 	ret := make([]*Embedding, len(texts))
 	for i := 0; i < len(ret); i++ {
 		ret[i] = &Embedding{
-			byprovider32: map[string][]float32{},
-			byprovider64: map[string][]float64{},
+			byprovider32:  map[string][]float32{},
+			byprovider64:  map[string][]float64{},
+			errByProvider: map[string]error{},
 		}
 	}
 
 	var wg sync.WaitGroup
-	var errs []error
 	var mu sync.Mutex
 
 	for _, prov := range m.providers {
@@ -296,7 +321,9 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 						mu.Lock()
 						defer mu.Unlock()
 						if err != nil {
-							errs = append(errs, fmt.Errorf("OpenAI: %v", err))
+							for i := 0; i < len(resp.Data); i++ {
+								ret[kindex+resp.Data[i].Index].errByProvider["openai"] = err
+							}
 							return
 						}
 						for i := 0; i < len(resp.Data); i++ {
@@ -316,7 +343,9 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 							if err != nil {
 								mu.Lock()
 								defer mu.Unlock()
-								errs = append(errs, fmt.Errorf("Cohere: %v", err))
+								for i := 0; i < len(batch); i++ {
+									ret[kindex+i].errByProvider["cohere"] = err
+								}
 								return
 							}
 						} else {
@@ -324,7 +353,9 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 							if client == nil {
 								mu.Lock()
 								defer mu.Unlock()
-								errs = append(errs, fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized"))
+								for i := 0; i < len(batch); i++ {
+									ret[kindex+i].errByProvider["cohere"] = fmt.Errorf("Cohere: we did not get an apikey for this request nor is a default client initialized")
+								}
 								return
 							}
 						}
@@ -344,7 +375,9 @@ func (m *Embedder) BatchEmbed(texts []string, opts ...WithProviderOption) ([]*Em
 						mu.Lock()
 						defer mu.Unlock()
 						if err != nil {
-							errs = append(errs, fmt.Errorf("Cohere: %v", err))
+							for i := 0; i < len(batch); i++ {
+								ret[kindex+i].errByProvider["cohere"] = err
+							}
 							return
 						}
 						for i := 0; i < len(resp.EmbeddingsFloats.Embeddings); i++ {
@@ -465,11 +498,17 @@ func (em *Embedding) GetByProvider(provider providerIden) ([]float64, error) {
 	default:
 		panic(fmt.Errorf("should not happen: %s", provider))
 	case "openai":
+		if em.errByProvider != nil && em.errByProvider["openai"] != nil {
+			return nil, em.errByProvider["openai"]
+		}
 		if len(em.byprovider32["openai"]) == 0 {
 			return nil, fmt.Errorf("This embedding does not contain provider openai")
 		}
 		return Float32ToFloat64(em.byprovider32["openai"]), nil
 	case "cohere":
+		if em.errByProvider != nil && em.errByProvider["cohere"] != nil {
+			return nil, em.errByProvider["cohere"]
+		}
 		if len(em.byprovider64["cohere"]) == 0 {
 			return nil, fmt.Errorf("This embedding does not contain provider cohere")
 		}
@@ -482,11 +521,17 @@ func (em *Embedding) GetByProvider32(provider providerIden) ([]float32, error) {
 	default:
 		panic(fmt.Errorf("should not happen: %s", provider))
 	case "openai":
+		if em.errByProvider != nil && em.errByProvider["openai"] != nil {
+			return nil, em.errByProvider["openai"]
+		}
 		if len(em.byprovider32["openai"]) == 0 {
 			return nil, fmt.Errorf("This embedding does not contain provider openai")
 		}
 		return em.byprovider32["openai"], nil
 	case "cohere":
+		if em.errByProvider != nil && em.errByProvider["cohere"] != nil {
+			return nil, em.errByProvider["cohere"]
+		}
 		if len(em.byprovider64["cohere"]) == 0 {
 			return nil, fmt.Errorf("This embedding does not contain provider cohere")
 		}
@@ -526,8 +571,14 @@ func (emb *Embedding) SetByProvider(provider providerIden, vector []float64) err
 		panic(fmt.Errorf("should not happen: %s", provider))
 	case "openai":
 		emb.byprovider32["openai"] = Float64ToFloat32(vector)
+		if emb.errByProvider != nil {
+			delete(emb.errByProvider, "openai")
+		}
 	case "cohere":
 		emb.byprovider64["cohere"] = vector
+		if emb.errByProvider != nil {
+			delete(emb.errByProvider, "cohere")
+		}
 	}
 
 	return nil
@@ -539,8 +590,14 @@ func (emb *Embedding) SetByProvider32(provider providerIden, vector []float32) e
 		panic(fmt.Errorf("should not happen: %s", provider))
 	case "openai":
 		emb.byprovider32["openai"] = vector
+		if emb.errByProvider != nil {
+			delete(emb.errByProvider, "openai")
+		}
 	case "cohere":
 		emb.byprovider64["cohere"] = Float32ToFloat64(vector)
+		if emb.errByProvider != nil {
+			delete(emb.errByProvider, "cohere")
+		}
 	}
 
 	return nil
