@@ -19,7 +19,7 @@ type EmbeddingRequest struct {
 	Input interface{} `json:"input"`
 
 	// Only supported in text-embedding-3 and later models
-	Dimensions int `json:"dimensions"`
+	Dimensions int `json:"dimensions,omitempty"`
 
 	User string `json:"user,omitempty"`
 }
